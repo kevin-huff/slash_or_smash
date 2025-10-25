@@ -4,7 +4,8 @@
     "types": ["node"],
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "noEmit": true
+    "noEmit": false,
+    "outDir": "./dist-server"
   },
   "include": ["server"]
 }

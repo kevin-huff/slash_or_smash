@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
@@ -9,6 +10,13 @@ import { judgePublicRouter, judgesRouter } from './routes/judges.js';
 import { authRouter, requireProducerAuth } from './routes/auth.js';
 import twitchRouter from './routes/twitch.js';
 import { initializeAuth } from './services/authStore.js';
+
+// Load .env file in development only (Railway provides env vars directly)
+if (process.env.NODE_ENV !== 'production') {
+  await import('dotenv/config');
+}
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Debug: Check if Twitch env vars are loaded
 console.log('[Server] TWITCH_CLIENT_ID:', process.env.TWITCH_CLIENT_ID ? `${process.env.TWITCH_CLIENT_ID.substring(0, 8)}...` : 'NOT SET');
@@ -63,9 +71,20 @@ app.use('/api/images', requireProducerAuth, imagesRouter);
 app.use('/api/control', requireProducerAuth, controlRouter);
 app.use('/api/judges', requireProducerAuth, judgesRouter);
 
-app.use((_req, res) => {
-  res.status(404).json({ error: 'Not Found' });
-});
+// Serve static frontend in production
+if (process.env.NODE_ENV === 'production') {
+  const distPath = path.join(__dirname, '..', 'dist');
+  app.use(express.static(distPath));
+  
+  // SPA fallback - serve index.html for all non-API routes
+  app.get('*', (_req, res) => {
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+} else {
+  app.use((_req, res) => {
+    res.status(404).json({ error: 'Not Found' });
+  });
+}
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

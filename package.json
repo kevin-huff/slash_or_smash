@@ -8,6 +8,8 @@
     "dev:server": "tsx watch --tsconfig tsconfig.server.json -r dotenv/config server/index.ts",
     "dev:all": "concurrently -k \"npm:dev:server\" \"npm:dev\"",
     "build": "tsc -b && vite build",
+    "build:server": "tsc --project tsconfig.server.json",
+    "start": "node dist-server/index.js",
     "preview": "vite preview",
     "lint": "eslint src --max-warnings=0",
     "typecheck": "tsc --noEmit"
