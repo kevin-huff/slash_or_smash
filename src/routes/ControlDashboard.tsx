@@ -16,6 +16,7 @@ import {
   updateVote,
   deleteVote,
   deleteAllVotes,
+  clearAll,
   fetchSettings,
   updateSettings,
   type ShowStage,
@@ -844,6 +845,11 @@ export function ControlDashboard(): JSX.Element {
   const handleReopenRound = () => handleStageAction(reopenRound, 'Failed to reopen round.');
   const handleResetShow = () => handleStageAction(resetShow, 'Failed to reset show.');
   const handleClearAllVotes = () => handleStageAction(deleteAllVotes, 'Failed to clear all votes.');
+  const handleClearAll = () => {
+    if (window.confirm('⚠️ WARNING: This will delete ALL images, votes, and queue data. This cannot be undone. Are you sure?')) {
+      handleStageAction(clearAll, 'Failed to clear all data.');
+    }
+  };
   const handlePauseTimerAction = () => handleStageAction(pauseTimer, 'Failed to pause timer.');
   const handleResumeTimerAction = () => handleStageAction(resumeTimer, 'Failed to resume timer.');
   const handleExtendThirty = () => handleStageAction(() => extendTimer(30), 'Failed to extend timer.');
@@ -1467,6 +1473,14 @@ export function ControlDashboard(): JSX.Element {
                   disabled={isStageMutating}
                 >
                   Clear All Votes
+                </button>
+                <button
+                  type="button"
+                  className={`rounded-full border-2 border-status-results bg-status-results/10 px-6 py-3 text-sm font-semibold uppercase tracking-[0.35em] text-status-results transition hover:bg-status-results/20 ${isStageMutating ? 'cursor-not-allowed opacity-50' : ''}`}
+                  onClick={() => void handleClearAll()}
+                  disabled={isStageMutating}
+                >
+                  ⚠️ Clear Everything
                 </button>
                 <button
                   type="button"

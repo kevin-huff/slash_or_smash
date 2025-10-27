@@ -261,6 +261,11 @@ export function serializeShowState(): ShowState {
   if (stage === 'voting' && timer.status === 'completed') {
     if (currentImage) {
       updateImageStatus(currentImage.id, 'locked');
+      
+      // Resolve Twitch prediction when timer auto-completes
+      resolvePredictionForRound(currentImage.id).catch((error) => {
+        console.error('Failed to resolve Twitch prediction on timer completion:', error);
+      });
     }
     setStage('locked');
     stage = 'locked';

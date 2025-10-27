@@ -252,6 +252,34 @@ export class TwitchClient {
         return false;
       }
 
+      // First, check the current status of the prediction
+      const statusResponse = await fetch(
+        `${TWITCH_API_BASE}/predictions?broadcaster_id=${tokens.broadcasterId}&id=${params.predictionId}`,
+        {
+          headers: {
+            'Client-ID': this.clientId,
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+
+      if (statusResponse.ok) {
+        const statusData = await statusResponse.json();
+        const prediction = statusData.data?.[0];
+        
+        if (prediction) {
+          console.log(`Prediction ${params.predictionId} current status: ${prediction.status}`);
+          
+          // If prediction is already RESOLVED or CANCELED, we can't resolve it again
+          if (prediction.status === 'RESOLVED' || prediction.status === 'CANCELED') {
+            console.log(`Prediction already ${prediction.status}, skipping resolution`);
+            return true;
+          }
+          
+          // If prediction is still ACTIVE or LOCKED, we can resolve it
+        }
+      }
+
       const body = {
         broadcaster_id: tokens.broadcasterId,
         id: params.predictionId,

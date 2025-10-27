@@ -90,8 +90,12 @@ export async function resolvePredictionForRound(imageId: string): Promise<void> 
 
     // Get vote summary to determine winner
     const summary = getVoteSummary(imageId);
-    if (!summary || summary.average === null) {
-      console.error('No vote summary available for image', imageId);
+    
+    // If no votes yet, cancel the prediction (refunds points)
+    if (!summary || summary.average === null || summary.judgeCount === 0) {
+      console.log('No votes available for image', imageId, '- canceling prediction instead of resolving');
+      await client.cancelPrediction(predictionId);
+      clearRunState('twitch_prediction_id');
       return;
     }
 

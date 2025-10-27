@@ -1,4 +1,7 @@
 import { db } from '../db.js';
+import fs from 'node:fs';
+import path from 'node:path';
+import { config } from '../config.js';
 
 export interface ImageRecord {
   id: string;
@@ -80,6 +83,8 @@ const updateStatusStmt = db.prepare<[string, string]>(`UPDATE images SET status 
 
 const updateNameStmt = db.prepare<[string, string]>(`UPDATE images SET name = ? WHERE id = ?`);
 
+const deleteAllImagesStmt = db.prepare(`DELETE FROM images`);
+
 export function createImage(record: CreateImageInput): ImageRecord {
   const status = record.status ?? 'queued';
 
@@ -126,4 +131,25 @@ export function updateImageName(id: string, name: string): ImageRecord | null {
   }
   updateNameStmt.run(name, id);
   return { ...image, name };
+}
+
+export function deleteAllImages(): void {
+  // Get all images before deleting from DB
+  const images = listImages();
+  
+  // Delete all database records
+  deleteAllImagesStmt.run();
+  
+  // Delete all files from uploads directory
+  for (const image of images) {
+    try {
+      const fullPath = path.join(config.rootDir, image.filePath);
+      if (fs.existsSync(fullPath)) {
+        fs.unlinkSync(fullPath);
+        console.log(`Deleted file: ${image.filePath}`);
+      }
+    } catch (error) {
+      console.error(`Failed to delete file ${image.filePath}:`, error);
+    }
+  }
 }

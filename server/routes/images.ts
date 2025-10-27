@@ -116,6 +116,7 @@ publicImagesRouter.get('/leaderboard', (_req, res) => {
       average: voteSummary.average,
       voteCount: voteSummary.judgeCount,
       distribution: voteSummary.distribution,
+      votes: voteSummary.votes,
     };
   });
 

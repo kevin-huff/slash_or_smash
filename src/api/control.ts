@@ -333,6 +333,28 @@ export async function deleteAllVotes(): Promise<ShowState> {
   return (await response.json()) as ShowState;
 }
 
+export async function clearAll(): Promise<ShowState> {
+  const response = await fetch(withBase('/api/control/clear-all'), {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    let message = `Failed to clear all data (${response.status})`;
+    try {
+      const payload = await response.json();
+      if (payload && typeof payload.error === 'string') {
+        message = payload.error;
+      }
+    } catch {
+      // ignore parse errors
+    }
+    throw new Error(message);
+  }
+
+  return (await response.json()) as ShowState;
+}
+
 export interface AppSettings {
   defaultTimerSeconds: number;
   graceWindowSeconds: number;

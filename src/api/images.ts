@@ -12,11 +12,21 @@ export interface UploadedImage {
   status: string;
 }
 
+export interface VoteSummaryItem {
+  judgeId: string;
+  judgeName: string | null;
+  judgeIcon: string | null;
+  judgeStatus: 'pending' | 'active' | 'disabled';
+  score: number;
+  updatedAt: number;
+}
+
 export interface LeaderboardEntry {
   image: UploadedImage;
   average: number | null;
   voteCount: number;
   distribution: number[];
+  votes: VoteSummaryItem[];
 }
 
 interface ImagesResponse {

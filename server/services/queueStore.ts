@@ -25,6 +25,7 @@ const selectQueueStmt = db.prepare(`
 const nextOrdStmt = db.prepare(`SELECT COALESCE(MAX(ord), 0) AS maxOrd FROM queue`);
 const insertQueueStmt = db.prepare<[string, number]>(`INSERT INTO queue (image_id, ord) VALUES (?, ?)`);
 const deleteFromQueueStmt = db.prepare<[string]>(`DELETE FROM queue WHERE image_id = ?`);
+const clearQueueStmt = db.prepare(`DELETE FROM queue`);
 const updateOrdStmt = db.prepare<[number, string]>(`UPDATE queue SET ord = ? WHERE image_id = ?`);
 const selectFirstStmt = db.prepare(`
   SELECT
@@ -141,4 +142,8 @@ export function reorderQueue(imageIds: string[]): void {
   });
 
   tx();
+}
+
+export function clearQueue(): void {
+  clearQueueStmt.run();
 }

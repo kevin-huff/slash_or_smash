@@ -18,6 +18,8 @@ import {
 import { listJudges } from '../services/judgeStore.js';
 import { serializeImage } from '../utils/imageResponse.js';
 import { deleteVote, deleteAllVotes, saveVote } from '../services/voteStore.js';
+import { deleteAllImages } from '../services/imageStore.js';
+import { clearQueue } from '../services/queueStore.js';
 import { getSettings, updateSettings, type AppSettings } from '../services/settingsStore.js';
 
 const controlRouter = Router();
@@ -268,6 +270,27 @@ controlRouter.delete('/votes/:imageId/:judgeId', (req, res, next) => {
 controlRouter.delete('/votes', (_req, res, next) => {
   try {
     deleteAllVotes();
+    const state = serializeShowState();
+    res.json(mapStateForResponse(state));
+  } catch (error) {
+    next(error);
+  }
+});
+
+controlRouter.post('/clear-all', (_req, res, next) => {
+  try {
+    // Reset show state first
+    resetToIdle();
+    
+    // Clear queue
+    clearQueue();
+    
+    // Delete all votes
+    deleteAllVotes();
+    
+    // Delete all images (database records and files)
+    deleteAllImages();
+    
     const state = serializeShowState();
     res.json(mapStateForResponse(state));
   } catch (error) {
