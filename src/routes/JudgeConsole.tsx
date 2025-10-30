@@ -3,7 +3,7 @@ import type { FormEvent } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import type { UploadedImage } from '../api/images';
 import type { ShowStage, ShowState, TimerState } from '../api/control';
-import { fetchShowState } from '../api/control';
+import { fetchShowStatePublic } from '../api/control';
 import { activateJudge, fetchJudgeProfile, pingJudge, submitJudgeVote, type JudgeProfile } from '../api/judges';
 import { JUDGE_ICON_MAP, JUDGE_ICON_OPTIONS } from '../constants/judges';
 
@@ -242,7 +242,7 @@ export function JudgeConsole(): JSX.Element {
     async function load() {
       setIsLoadingState(true);
       try {
-        const state = await fetchShowState();
+        const state = await fetchShowStatePublic();
         if (!cancelled) {
           setShowState(state);
           setShowStateError(null);
