@@ -174,6 +174,11 @@ export async function initChatListener(): Promise<void> {
     await client.connect();
   } catch (error) {
     console.error('[Chat] Failed to connect to Twitch chat', error);
+    // Important: Disconnect to stop internal reconnection timers if the initial connect failed
+    if (client) {
+      // We don't await this or log errors because we're already handling a failure
+      client.disconnect().catch(() => { });
+    }
     client = null;
     status.connected = false;
     status.connecting = false;
