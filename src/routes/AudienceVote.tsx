@@ -83,7 +83,7 @@ export function AudienceVote(): JSX.Element {
     return 'Idle';
   }, [state]);
 
-  const audienceAverage = state?.audienceVotes?.average;
+  const audienceAverage = state?.audienceVotes?.average ?? null;
   const audienceCount = state?.audienceVotes?.voteCount ?? 0;
   const audienceDistribution = state?.audienceVotes?.distribution ?? [];
   const activeImage = state?.currentImage ?? null;
