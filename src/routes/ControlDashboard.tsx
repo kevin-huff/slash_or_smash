@@ -203,11 +203,21 @@ function StateChip({ state, subtle }: { state: ControlState; subtle?: boolean })
 }
 
 const primaryButton =
-  'rounded-full bg-witchlight-500 px-5 py-2 font-semibold text-night-900 shadow-[0_10px_30px_rgba(126,75,255,0.35)] transition hover:bg-witchlight-500/90 active:translate-y-[1px] ' +
+  'rounded-full bg-gradient-to-r from-[#d64545] to-[#f7d774] px-5 py-2 font-semibold text-[#0b1712] shadow-[0_12px_30px_rgba(0,0,0,0.35)] transition hover:brightness-110 active:translate-y-[1px] ' +
   focusVisible;
 const secondaryButton =
-  'rounded-full border border-specter-300/50 px-5 py-2 font-semibold text-bone-100 transition hover:border-specter-300 hover:bg-night-900/80 ' +
+  'rounded-full border border-white/20 bg-white/5 px-5 py-2 font-semibold text-bone-100 transition hover:border-gold/70 hover:text-gold ' +
   focusVisible;
+
+function SnowBackdrop(): JSX.Element {
+  return (
+    <>
+      <div className="pointer-events-none absolute inset-0 opacity-55" style={{ backgroundImage: "url('/images/snowfall.svg')" }} />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#0c1a14] via-[#0f241b] to-[#0b1712]" />
+      <div className="pointer-events-none absolute inset-0 mix-blend-screen opacity-45 bg-[radial-gradient(70%_50%_at_15%_15%,rgba(200,55,70,0.16),rgba(10,24,16,0)),radial-gradient(70%_45%_at_85%_10%,rgba(247,215,116,0.18),rgba(10,24,16,0)),radial-gradient(90%_60%_at_50%_110%,rgba(34,120,78,0.26),rgba(10,24,16,0))]" />
+    </>
+  );
+}
 export function ControlDashboard(): JSX.Element {
   const navigate = useNavigate();
   const {
@@ -1011,13 +1021,14 @@ export function ControlDashboard(): JSX.Element {
   const showOverlayVoting = showState?.showOverlayVoting ?? false;
 
   return (
-    <main className="min-h-screen bg-night-900 text-bone-100">
-      <div className="mx-auto flex max-w-7xl flex-col gap-10 px-6 py-10 lg:px-10">
+    <main className="relative min-h-screen overflow-hidden bg-[#0e1c14] text-bone-100">
+      <SnowBackdrop />
+      <div className="relative z-10 mx-auto flex max-w-7xl flex-col gap-10 px-6 py-10 lg:px-10">
         <header className="space-y-6">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="text-sm uppercase tracking-[0.45em] text-specter-300">Slash or Smash</p>
-              <h1 className="text-4xl font-semibold text-witchlight-500 md:text-5xl">Producer Control</h1>
+              <p className="text-sm uppercase tracking-[0.45em] text-specter-300">Slash or Smash · North Pole</p>
+              <h1 className="text-4xl font-semibold text-gold md:text-5xl">Producer Workshop</h1>
             </div>
             <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
               <StateChip state={controlStage} />
@@ -1047,8 +1058,8 @@ export function ControlDashboard(): JSX.Element {
                   type="button"
                   className={`rounded-full px-5 py-2 text-sm font-semibold uppercase tracking-[0.35em] transition ${
                     isActive
-                      ? 'bg-witchlight-500 text-night-900 shadow-[0_10px_30px_rgba(126,75,255,0.45)]'
-                      : 'border border-transparent text-specter-300 hover:border-specter-300/40 hover:text-bone-100'
+                      ? 'bg-gradient-to-r from-[#d64545] to-[#f7d774] text-[#0b1712] shadow-[0_12px_30px_rgba(0,0,0,0.35)]'
+                      : 'border border-transparent text-specter-300 hover:border-gold/40 hover:text-gold'
                   } ${focusVisible}`}
                 >
                   {scene.label}

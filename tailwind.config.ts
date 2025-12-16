@@ -9,26 +9,32 @@ export default {
     extend: {
       colors: {
         night: {
-          900: '#0A0A12',
+          900: '#0E1C14',
         },
         grave: {
-          800: '#11121A',
+          800: '#123427',
         },
         witchlight: {
-          500: '#7E4BFF',
+          400: '#36996B',
+          500: '#2B7A55',
         },
         specter: {
-          300: '#BDB7FF',
+          300: '#C8E0D0',
         },
         bone: {
-          100: '#F5F7FF',
+          100: '#F6F3E4',
         },
         status: {
-          ready: '#6C6CFF',
-          voting: '#13E2A1',
-          locked: '#FFC857',
-          results: '#FF4B91',
+          ready: '#4FA387',
+          voting: '#F7D774',
+          locked: '#E7683C',
+          results: '#D64545',
         },
+        snow: '#F6F3E4',
+        frost: '#C8E0D0',
+        ember: '#D64545',
+        gold: '#F7D774',
+        pine: '#0E1C14',
       },
     },
   },

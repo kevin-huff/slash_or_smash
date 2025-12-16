@@ -10,6 +10,16 @@ type OverlayStage = 'ready' | 'voting' | 'locked' | 'results';
 const focusVisible =
   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-status-voting';
 
+function SnowBackdrop(): JSX.Element {
+  return (
+    <>
+      <div className="pointer-events-none absolute inset-0 opacity-65" style={{ backgroundImage: "url('/images/snowfall.svg')" }} />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#0c1a14] via-[#0f241b] to-[#0b1712]" />
+      <div className="pointer-events-none absolute inset-0 mix-blend-screen opacity-55 bg-[radial-gradient(70%_50%_at_20%_20%,rgba(200,55,70,0.18),rgba(10,24,16,0)),radial-gradient(70%_45%_at_80%_10%,rgba(247,215,116,0.2),rgba(10,24,16,0)),radial-gradient(90%_60%_at_50%_110%,rgba(34,120,78,0.32),rgba(10,24,16,0))]" />
+    </>
+  );
+}
+
 const STAGE_META: Record<
   OverlayStage,
   {
@@ -47,7 +57,7 @@ const STAGE_META: Record<
 
 const DEV_STAGES: OverlayStage[] = ['ready', 'voting', 'locked', 'results'];
 
-const voteColors = ['#6C6CFF', '#7E4BFF', '#B45CFF', '#FF4B91', '#13E2A1'] as const;
+const voteColors = ['#D64545', '#E7683C', '#F7D774', '#4FA387', '#2B7A55'] as const;
 const DEFAULT_TIMER_MS = 120000;
 
 function formatTimerValue(ms: number): string {
@@ -63,7 +73,7 @@ function StageChip({ stage }: { stage: OverlayStage }): JSX.Element {
   const meta = STAGE_META[stage];
   return (
     <span
-      className={`inline-flex items-center gap-3 rounded-full border border-white/20 bg-night-900/95 px-5 py-3 text-xs font-semibold uppercase tracking-[0.4em] shadow-[0_0_30px_rgba(0,0,0,0.8),0_0_20px_rgba(126,75,255,0.3)] backdrop-blur-xl ${meta.chipTone}`}
+      className={`inline-flex items-center gap-3 rounded-full border border-white/20 bg-night-900/95 px-5 py-3 text-xs font-semibold uppercase tracking-[0.4em] shadow-[0_0_30px_rgba(0,0,0,0.8),0_0_20px_rgba(247,215,116,0.25)] backdrop-blur-xl ${meta.chipTone}`}
     >
       <span className="h-2 w-2 rounded-full bg-current shadow-[0_0_8px_currentColor]" />
       {meta.label}
@@ -392,8 +402,9 @@ export function OverlayUnified(): JSX.Element {
   const nextImageName = showState?.queue[0]?.image.name ?? 'Awaiting upload';
 
   return (
-    <main className="relative h-screen w-screen overflow-hidden text-bone-100">
+    <main className="relative h-screen w-screen overflow-hidden bg-transparent text-bone-100">
       {/* Transparent background for OBS */}
+      <SnowBackdrop />
 
       <div className="relative mx-auto flex h-full w-full max-w-[1920px] flex-col px-6 py-6 lg:px-16 lg:py-12">
         <div className="pointer-events-none absolute left-6 top-6 sm:left-12 sm:top-10 z-10">
@@ -401,10 +412,10 @@ export function OverlayUnified(): JSX.Element {
         </div>
 
         <div className={`relative grid flex-1 items-stretch gap-6 ${showVotingPanel ? 'grid-cols-1 lg:grid-cols-[minmax(0,1.85fr)_minmax(0,1fr)]' : 'grid-cols-1'}`}>
-          <section className="relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-night-900/90 shadow-[0_0_60px_rgba(126,75,255,0.2)] backdrop-blur-xl">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_55%_35%,rgba(126,75,255,0.08),transparent_70%)]" />
+          <section className="relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-night-900/90 shadow-[0_0_60px_rgba(247,215,116,0.2)] backdrop-blur-xl">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_55%_35%,rgba(247,215,116,0.1),transparent_70%)]" />
             <div className="relative flex h-full items-center justify-center px-10 py-12">
-              <div className="absolute inset-10 overflow-hidden rounded-[2rem] border border-white/10 bg-night-900/80 shadow-[inset_0_0_40px_rgba(126,75,255,0.1)] backdrop-blur-sm">
+              <div className="absolute inset-10 overflow-hidden rounded-[2rem] border border-white/10 bg-night-900/80 shadow-[inset_0_0_40px_rgba(247,215,116,0.12)] backdrop-blur-sm">
                 <div className="relative h-full w-full">
                   {activeImage ? (
                     <>
@@ -413,11 +424,11 @@ export function OverlayUnified(): JSX.Element {
                         alt={activeImage.name}
                         className="h-full w-full object-contain"
                       />
-                      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(255,75,145,0.08),transparent_80%)]" />
+                      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(214,69,69,0.12),transparent_80%)]" />
                     </>
                   ) : (
                     <>
-                      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(126,75,255,0.1),transparent_70%)]" />
+                      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(247,215,116,0.12),transparent_70%)]" />
                       <div className="relative flex h-full w-full items-center justify-center">
                         <span className="text-lg uppercase tracking-[0.5em] text-specter-300/70">
                           {showStateError ? 'Upload failed — retry from control' : 'Upload art from control to preview here'}
@@ -431,7 +442,7 @@ export function OverlayUnified(): JSX.Element {
 
             {/* Timer bar positioned over the image section */}
             <div className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 z-20 w-[90%] max-w-[85%]">
-              <div className="relative flex items-center justify-between gap-2 rounded-full border border-witchlight-500/30 bg-gradient-to-r from-witchlight-900/95 to-status-results/95 px-6 py-3 shadow-[0_0_60px_rgba(126,75,255,0.5),0_0_40px_rgba(255,75,145,0.4)] backdrop-blur-xl">
+              <div className="relative flex items-center justify-between gap-2 rounded-full border border-gold/40 bg-gradient-to-r from-[#1a4b35]/90 via-[#2b7a55]/90 to-[#d64545]/90 px-6 py-3 shadow-[0_0_60px_rgba(247,215,116,0.35),0_0_40px_rgba(214,69,69,0.3)] backdrop-blur-xl">
                 <div className="flex-shrink-0 text-xs uppercase tracking-[0.35em] text-specter-300">{timerCaption}</div>
                 <div className={`flex-shrink-0 font-mono text-4xl font-semibold ${timerTone}`}>{timerValue}</div>
                 {showGrace && stage === 'voting' ? (
@@ -449,9 +460,9 @@ export function OverlayUnified(): JSX.Element {
 
           {showVotingPanel && (
             <aside
-              className={`relative flex flex-col justify-between gap-6 rounded-[2.5rem] border ${meta.railBorder} bg-night-900/90 p-6 backdrop-blur-xl shadow-[0_0_50px_rgba(126,75,255,0.15)]`}
+              className={`relative flex flex-col justify-between gap-6 rounded-[2.5rem] border ${meta.railBorder} bg-night-900/90 p-6 backdrop-blur-xl shadow-[0_0_50px_rgba(214,69,69,0.2)]`}
             >
-              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,rgba(255,75,145,0.05),transparent_60%)]" />
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,rgba(247,215,116,0.1),transparent_60%)]" />
               {stage === 'ready' && <ReadyPanel nextImageName={activeImage?.name ?? nextImageName} />}
               {stage === 'voting' && <VotingPanel distribution={distribution} totalVotes={totalVotes} average={finalAverage} votes={voteSummary?.votes ?? []} />}
               {stage === 'locked' && <LockedPanel average={finalAverage} totalVotes={totalVotes} distribution={distribution} />}
@@ -472,8 +483,8 @@ export function OverlayUnified(): JSX.Element {
               onClick={() => setStageOverride(candidate)}
               className={`rounded-full px-4 py-2 font-semibold transition ${
                 (stageOverride ?? derivedStage) === candidate
-                  ? 'border border-witchlight-500 bg-witchlight-500/20 text-witchlight-500'
-                  : 'border border-white/10 text-specter-300 hover:border-specter-300/60 hover:text-bone-100'
+                  ? 'border border-gold bg-gold/15 text-gold'
+                  : 'border border-white/10 text-specter-300 hover:border-gold/50 hover:text-gold'
               } ${focusVisible}`}
             >
               {candidate}

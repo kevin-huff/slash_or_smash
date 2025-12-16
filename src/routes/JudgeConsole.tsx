@@ -62,15 +62,25 @@ const focusVisible =
   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-status-voting';
 
 const primaryButton =
-  'rounded-full bg-witchlight-500 px-5 py-2 font-semibold text-night-900 shadow-[0_10px_30px_rgba(126,75,255,0.35)] transition hover:bg-witchlight-500/90 active:translate-y-[1px] ' +
+  'rounded-full bg-gradient-to-r from-[#d64545] to-[#f7d774] px-5 py-2 font-semibold text-[#0b1712] shadow-[0_12px_30px_rgba(0,0,0,0.35)] transition hover:brightness-110 active:translate-y-[1px] ' +
   focusVisible;
 
+function SnowBackdrop(): JSX.Element {
+  return (
+    <>
+      <div className="pointer-events-none absolute inset-0 opacity-60" style={{ backgroundImage: "url('/images/snowfall.svg')" }} />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#0c1a14] via-[#0f241b] to-[#0b1712]" />
+      <div className="pointer-events-none absolute inset-0 mix-blend-screen opacity-50 bg-[radial-gradient(70%_50%_at_20%_20%,rgba(200,55,70,0.16),rgba(10,24,16,0)),radial-gradient(70%_45%_at_80%_10%,rgba(247,215,116,0.16),rgba(10,24,16,0)),radial-gradient(90%_60%_at_50%_110%,rgba(34,120,78,0.28),rgba(10,24,16,0))]" />
+    </>
+  );
+}
+
 const VOTE_LABELS: Record<number, string> = {
-  1: 'Not it',
-  2: 'Warm-ish',
-  3: 'Spooky good',
-  4: 'Scorching',
-  5: 'Certified Hot',
+  1: 'Lump of Coal',
+  2: 'Needs Frosting',
+  3: 'On the Nice List',
+  4: 'Festive Fire',
+  5: 'North Pole Perfect',
 };
 const DEFAULT_TIMER_MS = 120000;
 
@@ -439,8 +449,9 @@ export function JudgeConsole(): JSX.Element {
 
   if (!token) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-night-900 text-bone-100">
-        <div className="rounded-3xl border border-white/10 bg-night-900/70 px-6 py-8 text-center">
+      <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#0e1c14] text-bone-100">
+        <SnowBackdrop />
+        <div className="relative z-10 rounded-3xl border border-white/10 bg-night-900/70 px-6 py-8 text-center shadow-[0_30px_100px_rgba(0,0,0,0.5)] backdrop-blur-sm">
           <p className="text-2xl font-semibold">Invite Required</p>
           <p className="mt-3 text-sm text-specter-300">
             Ask the producer to share your invite link. Visit it on this device to claim your judge seat.
@@ -452,13 +463,14 @@ export function JudgeConsole(): JSX.Element {
 
   if (profileError) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-night-900 text-bone-100">
-        <div className="rounded-3xl border border-white/10 bg-night-900/70 px-6 py-8 text-center">
+      <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#0e1c14] text-bone-100">
+        <SnowBackdrop />
+        <div className="relative z-10 rounded-3xl border border-white/10 bg-night-900/70 px-6 py-8 text-center shadow-[0_30px_100px_rgba(0,0,0,0.5)] backdrop-blur-sm">
           <p className="text-2xl font-semibold">Unable to load invite</p>
           <p className="mt-3 text-sm text-status-results">{profileError}</p>
           <button
             type="button"
-            className={`${focusVisible} mt-4 rounded-full border border-witchlight-500 px-4 py-2 text-sm font-semibold uppercase tracking-[0.35em] text-witchlight-500 transition hover:bg-witchlight-500/10`}
+            className={`${focusVisible} mt-4 rounded-full border border-gold/60 bg-white/5 px-4 py-2 text-sm font-semibold uppercase tracking-[0.35em] text-gold transition hover:border-gold hover:bg-gold/10`}
             onClick={() => {
               setProfileError(null);
               setProfile(null);
@@ -473,8 +485,9 @@ export function JudgeConsole(): JSX.Element {
 
   if (isLoadingProfile && !profile) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-night-900 text-bone-100">
-        <div className="rounded-3xl border border-white/10 bg-night-900/70 px-6 py-8 text-center">
+      <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#0e1c14] text-bone-100">
+        <SnowBackdrop />
+        <div className="relative z-10 rounded-3xl border border-white/10 bg-night-900/70 px-6 py-8 text-center shadow-[0_30px_100px_rgba(0,0,0,0.5)] backdrop-blur-sm">
           <p className="text-2xl font-semibold">Loading your invite…</p>
         </div>
       </main>
@@ -483,8 +496,9 @@ export function JudgeConsole(): JSX.Element {
 
   if (!profile) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-night-900 text-bone-100">
-        <div className="rounded-3xl border border-white/10 bg-night-900/70 px-6 py-8 text-center">
+      <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#0e1c14] text-bone-100">
+        <SnowBackdrop />
+        <div className="relative z-10 rounded-3xl border border-white/10 bg-night-900/70 px-6 py-8 text-center shadow-[0_30px_100px_rgba(0,0,0,0.5)] backdrop-blur-sm">
           <p className="text-2xl font-semibold">Invite not found</p>
           <p className="mt-3 text-sm text-specter-300">Double-check your link or ask the producer for a new invite.</p>
         </div>
@@ -494,8 +508,9 @@ export function JudgeConsole(): JSX.Element {
 
   if (needsProfileSetup) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-night-900 text-bone-100 px-6 py-12">
-        <div className="w-full max-w-md rounded-3xl border border-white/10 bg-night-900/80 p-6 shadow-[0_40px_120px_rgba(0,0,0,0.6)]">
+      <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#0e1c14] text-bone-100 px-6 py-12">
+        <SnowBackdrop />
+        <div className="relative z-10 w-full max-w-md rounded-3xl border border-white/10 bg-night-900/80 p-6 shadow-[0_40px_120px_rgba(0,0,0,0.6)] backdrop-blur-sm">
           <h1 className="text-2xl font-semibold text-bone-100 sm:text-3xl">Claim your judge seat</h1>
           <p className="mt-2 text-sm text-specter-300">
             Choose a display name and avatar. You can change this later by reopening your invite link.
@@ -524,7 +539,7 @@ export function JudgeConsole(): JSX.Element {
                       type="button"
                       onClick={() => setIconChoice(icon.id)}
                       className={`${
-                        isActive ? 'border-witchlight-500 bg-witchlight-500/10 text-witchlight-500' : 'border-white/10 text-bone-100 hover:border-witchlight-500/40'
+                        isActive ? 'border-gold bg-gold/10 text-gold' : 'border-white/10 text-bone-100 hover:border-gold/40'
                       } ${focusVisible} flex flex-col items-center gap-2 rounded-2xl border px-4 py-3 text-sm font-semibold`}
                     >
                       <span className="text-2xl" aria-hidden>
@@ -555,8 +570,9 @@ export function JudgeConsole(): JSX.Element {
   }
 
   return (
-    <main className="flex min-h-screen flex-col bg-night-900 text-bone-100">
-      <div className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-8 px-6 py-10 sm:px-8">
+    <main className="relative flex min-h-screen flex-col overflow-hidden bg-[#0e1c14] text-bone-100">
+      <SnowBackdrop />
+      <div className="relative z-10 mx-auto flex w-full max-w-xl flex-1 flex-col gap-8 px-6 py-10 sm:px-8">
         <header className="rounded-3xl border border-white/5 bg-grave-800/60 p-6">
           <div className="grid gap-6">
             <div className="flex items-center justify-between">
@@ -609,7 +625,7 @@ export function JudgeConsole(): JSX.Element {
             {activeImage ? (
               <div className="relative aspect-[4/3] w-full">
                 <img src={activeImage.url} alt={activeImage.name} className="h-full w-full object-cover" />
-                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(126,75,255,0.25),rgba(10,10,18,0)_85%)]" />
+                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(247,215,116,0.2),rgba(12,26,18,0)_85%)]" />
               </div>
             ) : (
               <div className="flex aspect-[4/3] w-full flex-col items-center justify-center gap-3 px-6 text-center text-sm text-specter-300">

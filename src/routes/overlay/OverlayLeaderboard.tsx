@@ -12,6 +12,14 @@ interface DerivedRow {
 export function OverlayLeaderboard(): JSX.Element {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
 
+  const SnowBackdrop = () => (
+    <>
+      <div className="pointer-events-none absolute inset-0 opacity-65" style={{ backgroundImage: "url('/images/snowfall.svg')" }} />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#0c1a14] via-[#0f241b] to-[#0b1712]" />
+      <div className="pointer-events-none absolute inset-0 mix-blend-screen opacity-55 bg-[radial-gradient(70%_50%_at_20%_20%,rgba(200,55,70,0.18),rgba(10,24,16,0)),radial-gradient(70%_45%_at_80%_10%,rgba(247,215,116,0.2),rgba(10,24,16,0)),radial-gradient(90%_60%_at_50%_110%,rgba(34,120,78,0.3),rgba(10,24,16,0))]" />
+    </>
+  );
+
   const loadLeaderboard = useCallback(async () => {
     try {
       const data = await fetchLeaderboard();
@@ -48,18 +56,19 @@ export function OverlayLeaderboard(): JSX.Element {
   const topRow = rows[0];
 
   return (
-    <main className="relative flex min-h-screen w-full items-center justify-center overflow-hidden text-bone-100">
+    <main className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-transparent text-bone-100">
+      <SnowBackdrop />
 
       <div className="relative z-10 flex h-screen w-full max-w-[1920px] flex-col gap-6 px-8 py-6">
         <div className="grid flex-1 grid-cols-1 gap-6 overflow-hidden lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-          <section className="flex flex-col gap-4 rounded-[2.5rem] border border-white/10 bg-night-900/90 p-6 shadow-[0_0_60px_rgba(126,75,255,0.2)] backdrop-blur-xl overflow-hidden relative">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(126,75,255,0.06),transparent_50%)]" />
+          <section className="relative flex flex-col gap-4 overflow-hidden rounded-[2.5rem] border border-white/10 bg-night-900/90 p-6 shadow-[0_0_60px_rgba(247,215,116,0.2)] backdrop-blur-xl">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(247,215,116,0.08),transparent_50%)]" />
             {topRow ? (
               <>
                 <div className="flex flex-wrap items-center justify-between gap-4 flex-shrink-0 relative z-10">
                   <div className="flex-1">
                     <div className="flex items-center gap-3">
-                      <span className="flex h-12 w-12 items-center justify-center rounded-xl border border-status-results/60 bg-status-results/20 text-xl font-bold text-status-results shadow-[0_0_15px_rgba(255,75,145,0.3)]">
+                      <span className="flex h-12 w-12 items-center justify-center rounded-xl border border-gold/60 bg-gold/15 text-xl font-bold text-gold shadow-[0_0_15px_rgba(247,215,116,0.35)]">
                         #1
                       </span>
                       <div>
@@ -77,9 +86,9 @@ export function OverlayLeaderboard(): JSX.Element {
                       </p>
                     </div>
                   )}
-                </div>
-                <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-night-900/80 flex-1 min-h-0 shadow-[inset_0_0_40px_rgba(126,75,255,0.1)] backdrop-blur-sm relative z-10">
-                  <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(255,75,145,0.08),transparent_70%)]" />
+                  </div>
+                <div className="relative z-10 flex-1 min-h-0 overflow-hidden rounded-[2rem] border border-white/10 bg-night-900/80 shadow-[inset_0_0_40px_rgba(247,215,116,0.12)] backdrop-blur-sm">
+                  <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(214,69,69,0.1),transparent_70%)]" />
                   <div className="relative flex h-full items-center justify-center p-4">
                     <img
                       src={topRow.entry.image.url}
@@ -96,8 +105,8 @@ export function OverlayLeaderboard(): JSX.Element {
             )}
           </section>
 
-          <aside className="flex flex-col gap-4 rounded-[2.5rem] border border-white/10 bg-night-900/90 p-5 overflow-hidden shadow-[0_0_50px_rgba(126,75,255,0.15)] backdrop-blur-xl relative">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,rgba(255,75,145,0.05),transparent_60%)]" />
+          <aside className="relative flex flex-col gap-4 overflow-hidden rounded-[2.5rem] border border-white/10 bg-night-900/90 p-5 shadow-[0_0_50px_rgba(214,69,69,0.2)] backdrop-blur-xl">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,rgba(247,215,116,0.08),transparent_60%)]" />
             <h2 className="text-xl font-semibold text-bone-100 uppercase tracking-[0.35em] flex-shrink-0 relative z-10">Top 5</h2>
             <ul className="flex flex-1 flex-col gap-3 min-h-0 justify-evenly relative z-10">
               {rows.map((row) => (
@@ -105,7 +114,7 @@ export function OverlayLeaderboard(): JSX.Element {
                   key={row.entry.image.id}
                   className={`flex items-center justify-between gap-4 rounded-2xl border px-5 py-4 ${
                     row.rank === 1
-                      ? 'border-status-results/40 bg-status-results/10 text-bone-100 shadow-[0_0_20px_rgba(255,75,145,0.25)]'
+                      ? 'border-gold/50 bg-gold/10 text-bone-100 shadow-[0_0_20px_rgba(247,215,116,0.25)]'
                       : 'border-white/10 bg-night-900/70 text-specter-300 backdrop-blur-sm'
                   }`}
                 >

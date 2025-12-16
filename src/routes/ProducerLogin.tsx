@@ -69,24 +69,28 @@ export function ProducerLogin(): JSX.Element {
 
   if (checking) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-night-900">
-        <div className="text-center">
-          <div className="mb-4 inline-block h-8 w-8 animate-spin rounded-full border-4 border-witchlight-500 border-t-transparent"></div>
-          <p className="text-specter-300">Checking authentication...</p>
+      <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#0e1c14]">
+        <div className="pointer-events-none absolute inset-0 opacity-70" style={{ backgroundImage: "url('/images/snowfall.svg')" }} />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#0c1a14] via-[#0f241b] to-[#0b1712]" />
+        <div className="relative z-10 text-center">
+          <div className="mb-4 inline-block h-8 w-8 animate-spin rounded-full border-4 border-gold border-t-transparent"></div>
+          <p className="text-frost">Checking authentication...</p>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-night-900 px-6">
-      <div className="w-full max-w-md">
-        <div className="rounded-3xl border border-white/10 bg-grave-800/60 p-8 shadow-2xl">
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#0e1c14] px-6">
+      <div className="pointer-events-none absolute inset-0 opacity-70" style={{ backgroundImage: "url('/images/snowfall.svg')" }} />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#0c1a14] via-[#0f241b] to-[#0b1712]" />
+      <div className="relative z-10 w-full max-w-md">
+        <div className="rounded-3xl border border-white/10 bg-grave-800/70 p-8 shadow-[0_30px_120px_rgba(0,0,0,0.45)] backdrop-blur-sm">
           <div className="mb-8 text-center">
-            <h1 className="text-4xl font-semibold text-witchlight-500">
+            <h1 className="text-4xl font-semibold text-gold">
               {isSetupMode ? 'Set Password' : 'Producer Login'}
             </h1>
-            <p className="mt-2 text-sm text-specter-300">
+            <p className="mt-2 text-sm text-frost">
               {isSetupMode
                 ? 'Create a password for the producer control dashboard'
                 : 'Enter your password to access the control dashboard'}
@@ -103,7 +107,7 @@ export function ProducerLogin(): JSX.Element {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-xl border border-white/20 bg-night-900 px-4 py-3 text-bone-100 placeholder-specter-300/50 focus:border-witchlight-500 focus:outline-none focus:ring-2 focus:ring-witchlight-500/20"
+                className="w-full rounded-xl border border-white/20 bg-night-900/70 px-4 py-3 text-bone-100 placeholder-frost/60 focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/30"
                 placeholder={isSetupMode ? 'Choose a password' : 'Enter password'}
                 required
                 disabled={loading}
@@ -119,14 +123,14 @@ export function ProducerLogin(): JSX.Element {
                 <input
                   id="confirmPassword"
                   type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full rounded-xl border border-white/20 bg-night-900 px-4 py-3 text-bone-100 placeholder-specter-300/50 focus:border-witchlight-500 focus:outline-none focus:ring-2 focus:ring-witchlight-500/20"
-                  placeholder="Confirm password"
-                  required
-                  disabled={loading}
-                />
-              </div>
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full rounded-xl border border-white/20 bg-night-900/70 px-4 py-3 text-bone-100 placeholder-frost/60 focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/30"
+                placeholder="Confirm password"
+                required
+                disabled={loading}
+              />
+            </div>
             )}
 
             {error && (
@@ -138,7 +142,7 @@ export function ProducerLogin(): JSX.Element {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-xl bg-witchlight-500 px-6 py-3 font-semibold text-night-900 shadow-[0_10px_30px_rgba(126,75,255,0.45)] transition hover:bg-witchlight-400 focus:outline-none focus:ring-2 focus:ring-witchlight-500 focus:ring-offset-2 focus:ring-offset-night-900 disabled:cursor-not-allowed disabled:opacity-50"
+              className="w-full rounded-xl bg-gradient-to-r from-[#d64545] to-[#f7d774] px-6 py-3 font-semibold text-[#0b1712] shadow-[0_12px_40px_rgba(0,0,0,0.4)] transition hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-gold focus:ring-offset-2 focus:ring-offset-[#0e1c14] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? 'Please wait...' : isSetupMode ? 'Set Password' : 'Login'}
             </button>
