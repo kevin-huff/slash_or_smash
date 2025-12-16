@@ -27,6 +27,9 @@ export interface LeaderboardEntry {
   voteCount: number;
   distribution: number[];
   votes: VoteSummaryItem[];
+  audienceAverage: number | null;
+  audienceVoteCount: number;
+  audienceDistribution: number[];
 }
 
 interface ImagesResponse {

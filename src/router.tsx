@@ -9,6 +9,7 @@ import { OverlayLeaderboard } from './routes/overlay/OverlayLeaderboard';
 import { OverlayLayout } from './routes/overlay/OverlayLayout';
 import { OverlayUnified } from './routes/overlay/OverlayUnified';
 import { RequireAuth } from './components/RequireAuth';
+import { AudienceVote } from './routes/AudienceVote';
 
 export const router = createBrowserRouter([
   {
@@ -34,6 +35,10 @@ export const router = createBrowserRouter([
   {
     path: '/leaderboard',
     element: <Leaderboard />,
+  },
+  {
+    path: '/vote',
+    element: <AudienceVote />,
   },
   {
     path: '/overlay',

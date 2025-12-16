@@ -10,6 +10,7 @@ import { judgePublicRouter, judgesRouter } from './routes/judges.js';
 import { authRouter, requireProducerAuth } from './routes/auth.js';
 import twitchRouter from './routes/twitch.js';
 import { initializeAuth } from './services/authStore.js';
+import { initChatListener } from './services/chatListener.js';
 
 // Load .env file in development only (Railway provides env vars directly)
 if (process.env.NODE_ENV !== 'production') {
@@ -126,4 +127,7 @@ app.listen(config.port, () => {
     // eslint-disable-next-line no-console
     console.log('Please save this password and change it after first login.\n');
   }
+
+  // Start Twitch chat listener for audience voting
+  void initChatListener();
 });

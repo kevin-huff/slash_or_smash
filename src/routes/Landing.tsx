@@ -35,6 +35,9 @@ export function Landing(): JSX.Element {
           <Link className="rounded-full border border-white/15 bg-white/5 px-6 py-2 font-semibold text-frost transition hover:-translate-y-0.5 hover:border-gold/70 hover:text-gold" to="/overlay/leaderboard">
             Leaderboard Overlay
           </Link>
+          <Link className="rounded-full border border-gold/60 bg-gold/10 px-6 py-2 font-semibold text-gold transition hover:-translate-y-0.5 hover:border-gold hover:bg-gold/20" to="/vote">
+            Chat Vote Link
+          </Link>
         </nav>
       </div>
     </main>

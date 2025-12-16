@@ -84,9 +84,18 @@ export function OverlayLeaderboard(): JSX.Element {
                       <p className="text-xs uppercase tracking-[0.35em] text-specter-300">
                         {topRow.entry.voteCount} vote{topRow.entry.voteCount === 1 ? '' : 's'}
                       </p>
+                      <div className="mt-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-left">
+                        <p className="text-[0.65rem] uppercase tracking-[0.3em] text-specter-300">Chat Score</p>
+                        <p className="text-xl font-semibold text-gold">
+                          {topRow.entry.audienceAverage !== null ? `🎅 ${topRow.entry.audienceAverage.toFixed(2)}` : 'No chat votes'}
+                        </p>
+                        <p className="text-[0.65rem] uppercase tracking-[0.25em] text-specter-300">
+                          {topRow.entry.audienceVoteCount} vote{topRow.entry.audienceVoteCount === 1 ? '' : 's'}
+                        </p>
+                      </div>
                     </div>
                   )}
-                  </div>
+                </div>
                 <div className="relative z-10 flex-1 min-h-0 overflow-hidden rounded-[2rem] border border-white/10 bg-night-900/80 shadow-[inset_0_0_40px_rgba(247,215,116,0.12)] backdrop-blur-sm">
                   <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(214,69,69,0.1),transparent_70%)]" />
                   <div className="relative flex h-full items-center justify-center p-4">
@@ -131,6 +140,9 @@ export function OverlayLeaderboard(): JSX.Element {
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-lg font-semibold text-bone-100">{row.entry.image.name}</p>
+                      <p className="text-[0.65rem] uppercase tracking-[0.25em] text-specter-300">
+                        Chat {row.entry.audienceAverage !== null ? `🎅 ${row.entry.audienceAverage.toFixed(2)}` : 'No chat votes'}
+                      </p>
                     </div>
                   </div>
                   {row.hasScore && (

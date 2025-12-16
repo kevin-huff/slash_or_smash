@@ -11,6 +11,8 @@ interface DerivedRow {
   sizeLabel: string;
   scoreLabel: string;
   hasScore: boolean;
+  chatScoreLabel: string;
+  hasChatScore: boolean;
 }
 
 function formatUploadTime(timestamp: number): string {
@@ -80,6 +82,9 @@ export function Leaderboard(): JSX.Element {
       const scoreLabel = entry.average !== null 
         ? `★ ${entry.average.toFixed(2)}` 
         : 'No votes yet';
+      const chatScoreLabel = entry.audienceAverage !== null
+        ? `🎅 ${entry.audienceAverage.toFixed(2)}`
+        : 'No chat votes yet';
       
       return {
         rank: index + 1,
@@ -88,6 +93,8 @@ export function Leaderboard(): JSX.Element {
         sizeLabel: `${formatBytes(entry.image.size)} • ${entry.image.mimeType.replace('image/', '').toUpperCase()}`,
         scoreLabel,
         hasScore: entry.average !== null,
+        chatScoreLabel,
+        hasChatScore: entry.audienceAverage !== null,
       };
     });
   }, [leaderboard]);
@@ -213,40 +220,81 @@ export function Leaderboard(): JSX.Element {
 
                   {/* Score */}
                   <div className="flex-shrink-0 text-right">
-                    {row.hasScore ? (
-                      <div>
-                        <p className="text-xs uppercase tracking-[0.35em] text-[#c8e0d0]">Score</p>
-                        <p
-                          className={`mt-1 text-5xl font-bold ${
-                            row.rank === 1
-                              ? 'text-[#f7d774]'
-                              : row.rank === 2
-                              ? 'text-[#ff8c7a]'
-                              : row.rank === 3
-                              ? 'text-[#b7f4d0]'
-                              : 'text-[#f6f3e4]'
-                          }`}
-                        >
-                          {row.scoreLabel}
-                        </p>
-                        <p className="mt-1 text-xs uppercase tracking-[0.35em] text-[#c8e0d0]">
-                          {row.entry.voteCount} vote{row.entry.voteCount === 1 ? '' : 's'}
-                        </p>
-                        {row.entry.distribution.length === 5 && (
+                    <div className="flex flex-col items-end gap-4">
+                      {row.hasScore ? (
+                        <div>
+                          <p className="text-xs uppercase tracking-[0.35em] text-[#c8e0d0]">Score</p>
+                          <p
+                            className={`mt-1 text-5xl font-bold ${
+                              row.rank === 1
+                                ? 'text-[#f7d774]'
+                                : row.rank === 2
+                                ? 'text-[#ff8c7a]'
+                                : row.rank === 3
+                                ? 'text-[#b7f4d0]'
+                                : 'text-[#f6f3e4]'
+                            }`}
+                          >
+                            {row.scoreLabel}
+                          </p>
+                          <p className="mt-1 text-xs uppercase tracking-[0.35em] text-[#c8e0d0]">
+                            {row.entry.voteCount} vote{row.entry.voteCount === 1 ? '' : 's'}
+                          </p>
+                          {row.entry.distribution.length === 5 && (
+                            <div className="mt-3 flex gap-1">
+                              {row.entry.distribution.map((count, index) => (
+                                <div
+                                  key={index}
+                                  className="group/bar relative"
+                                  title={`${index + 1} stars: ${count} vote${count === 1 ? '' : 's'}`}
+                                >
+                                  <div className="h-8 w-2 rounded-full bg-white/10">
+                                    <div
+                                      className="w-full rounded-full bg-gradient-to-t from-[#f7d774] via-[#d64545] to-[#b72c2c] transition-all"
+                                      style={{
+                                        height: `${
+                                          row.entry.voteCount > 0
+                                            ? Math.max((count / row.entry.voteCount) * 100, count > 0 ? 10 : 0)
+                                            : 0
+                                        }%`,
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div>
+                          <p className="text-xs uppercase tracking-[0.35em] text-[#c8e0d0]">Status</p>
+                          <p className="mt-1 text-lg font-semibold text-[#c8e0d0]">Not Judged</p>
+                        </div>
+                      )}
+
+                      <div className="w-full min-w-[14rem] rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-left backdrop-blur-sm">
+                        <div className="flex items-center justify-between">
+                          <p className="text-[0.65rem] uppercase tracking-[0.35em] text-[#c8e0d0]">Chat Score</p>
+                          <span className="text-[0.65rem] uppercase tracking-[0.25em] text-[#c8e0d0]">
+                            {row.entry.audienceVoteCount} vote{row.entry.audienceVoteCount === 1 ? '' : 's'}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-2xl font-bold text-[#f7d774]">{row.chatScoreLabel}</p>
+                        {row.entry.audienceDistribution.length === 5 ? (
                           <div className="mt-3 flex gap-1">
-                            {row.entry.distribution.map((count, index) => (
+                            {row.entry.audienceDistribution.map((count, index) => (
                               <div
                                 key={index}
                                 className="group/bar relative"
-                                title={`${index + 1} stars: ${count} vote${count === 1 ? '' : 's'}`}
+                                title={`Chat ${index + 1} stars: ${count} vote${count === 1 ? '' : 's'}`}
                               >
-                                <div className="h-8 w-2 rounded-full bg-white/10">
+                                <div className="h-6 w-2 rounded-full bg-white/10">
                                   <div
-                                    className="w-full rounded-full bg-gradient-to-t from-[#f7d774] via-[#d64545] to-[#b72c2c] transition-all"
+                                    className="w-full rounded-full bg-gradient-to-t from-[#d64545] via-[#f7d774] to-[#4fa387] transition-all"
                                     style={{
                                       height: `${
-                                        row.entry.voteCount > 0
-                                          ? Math.max((count / row.entry.voteCount) * 100, count > 0 ? 10 : 0)
+                                        row.entry.audienceVoteCount > 0
+                                          ? Math.max((count / row.entry.audienceVoteCount) * 100, count > 0 ? 10 : 0)
                                           : 0
                                       }%`,
                                     }}
@@ -255,14 +303,11 @@ export function Leaderboard(): JSX.Element {
                               </div>
                             ))}
                           </div>
+                        ) : (
+                          <p className="mt-2 text-xs uppercase tracking-[0.3em] text-[#c8e0d0]/70">No chat votes yet</p>
                         )}
                       </div>
-                    ) : (
-                      <div>
-                        <p className="text-xs uppercase tracking-[0.35em] text-[#c8e0d0]">Status</p>
-                        <p className="mt-1 text-lg font-semibold text-[#c8e0d0]">Not Judged</p>
-                      </div>
-                    )}
+                    </div>
                   </div>
                 </div>
 

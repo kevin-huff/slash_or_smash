@@ -52,6 +52,15 @@ db.exec(`
     FOREIGN KEY (judge_id) REFERENCES judges(id) ON DELETE CASCADE
   );
 
+  CREATE TABLE IF NOT EXISTS audience_votes (
+    image_id TEXT NOT NULL,
+    voter_id TEXT NOT NULL,
+    score INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    PRIMARY KEY (image_id, voter_id),
+    FOREIGN KEY (image_id) REFERENCES images(id) ON DELETE CASCADE
+  );
+
   CREATE TABLE IF NOT EXISTS producer_auth (
     id INTEGER PRIMARY KEY CHECK (id = 1),
     password_hash TEXT NOT NULL,

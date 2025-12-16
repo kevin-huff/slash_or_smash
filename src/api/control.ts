@@ -35,12 +35,19 @@ export interface VoteSummary {
   votes: VoteSummaryItem[];
 }
 
+export interface AudienceSummary {
+  average: number | null;
+  distribution: number[];
+  voteCount: number;
+}
+
 export interface ShowState {
   stage: ShowStage;
   currentImage: UploadedImage | null;
   queue: QueueEntry[];
   timer: TimerState;
   currentVotes: VoteSummary | null;
+  audienceVotes: AudienceSummary | null;
   showOverlayVoting: boolean;
 }
 

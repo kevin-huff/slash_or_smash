@@ -3,6 +3,7 @@ import { clearRunState, getRunState, setRunState } from './runStateStore.js';
 import { getImageById, type ImageRecord, updateImageStatus } from './imageStore.js';
 import { getVoteSummary } from './voteStore.js';
 import type { VoteSummary } from './voteStore.js';
+import { getAudienceVoteSummary, type AudienceVoteSummary } from './audienceVoteStore.js';
 import { createPredictionForRound, resolvePredictionForRound, cancelActivePrediction } from './twitchPredictions.js';
 
 const DEFAULT_TIMER_MS = 120_000;
@@ -32,6 +33,7 @@ export interface ShowState {
   queue: QueueEntry[];
   timer: TimerState;
   currentVotes: VoteSummary | null;
+  audienceVotes: AudienceVoteSummary | null;
   showOverlayVoting: boolean;
 }
 
@@ -274,6 +276,7 @@ export function serializeShowState(): ShowState {
   const queueRows = getQueue();
   timer = getTimerStateSnapshot(); // refresh after potential mutation
   const currentVotes = currentImage ? getVoteSummary(currentImage.id) : null;
+  const audienceVotes = currentImage ? getAudienceVoteSummary(currentImage.id) : null;
 
   const queue: QueueEntry[] = queueRows.map((row, index) => ({
     position: index + 1,
@@ -289,6 +292,7 @@ export function serializeShowState(): ShowState {
     queue,
     timer,
     currentVotes,
+    audienceVotes,
     showOverlayVoting,
   };
 }

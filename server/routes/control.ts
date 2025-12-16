@@ -21,6 +21,8 @@ import { deleteVote, deleteAllVotes, saveVote } from '../services/voteStore.js';
 import { deleteAllImages } from '../services/imageStore.js';
 import { clearQueue } from '../services/queueStore.js';
 import { getSettings, updateSettings, type AppSettings } from '../services/settingsStore.js';
+import { clearAllAudienceVotes, getAudienceVoteSummary, saveAudienceVote } from '../services/audienceVoteStore.js';
+import crypto from 'node:crypto';
 
 const controlRouter = Router();
 
@@ -45,6 +47,13 @@ function mapStateForResponse(state: ShowState) {
         }),
       }
     : null;
+  const audienceVotes = state.audienceVotes
+    ? {
+        average: state.audienceVotes.average,
+        distribution: state.audienceVotes.distribution,
+        voteCount: state.audienceVotes.voteCount,
+      }
+    : null;
   return {
     stage: state.stage,
     currentImage: state.currentImage ? serializeImage(state.currentImage) : null,
@@ -55,6 +64,7 @@ function mapStateForResponse(state: ShowState) {
     })),
     timer: state.timer,
     currentVotes,
+    audienceVotes,
     showOverlayVoting: state.showOverlayVoting,
   };
 }
@@ -270,6 +280,7 @@ controlRouter.delete('/votes/:imageId/:judgeId', (req, res, next) => {
 controlRouter.delete('/votes', (_req, res, next) => {
   try {
     deleteAllVotes();
+    clearAllAudienceVotes();
     const state = serializeShowState();
     res.json(mapStateForResponse(state));
   } catch (error) {
@@ -287,6 +298,7 @@ controlRouter.post('/clear-all', (_req, res, next) => {
     
     // Delete all votes
     deleteAllVotes();
+    clearAllAudienceVotes();
     
     // Delete all images (database records and files)
     deleteAllImages();
@@ -335,6 +347,30 @@ controlPublicRouter.get('/overlay/state', (_req, res) => {
   const state = serializeShowState();
   const response = mapStateForResponse(state);
   res.json(response);
+});
+
+controlPublicRouter.post('/audience/vote', (req, res) => {
+  const body = req.body as { score?: unknown; voterId?: unknown };
+  const score = typeof body.score === 'number' ? body.score : null;
+
+  if (score === null || Number.isNaN(score) || score < 1 || score > 5) {
+    res.status(400).json({ error: 'Body must include score: number (1-5)' });
+    return;
+  }
+
+  const state = serializeShowState();
+  if (state.stage !== 'voting' || !state.currentImage) {
+    res.status(409).json({ error: 'No active voting round' });
+    return;
+  }
+
+  const providedId = typeof body.voterId === 'string' && body.voterId.trim().length > 0 ? body.voterId.trim() : null;
+  const voterId = providedId ?? crypto.randomUUID();
+
+  saveAudienceVote(state.currentImage.id, voterId, Math.round(score));
+  const audienceVotes = getAudienceVoteSummary(state.currentImage.id);
+
+  res.json({ voterId, audienceVotes });
 });
 
 export { controlRouter };

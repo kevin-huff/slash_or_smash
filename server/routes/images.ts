@@ -8,6 +8,7 @@ import { createImage, listImages, updateImageName } from '../services/imageStore
 import { handleImageQueued } from '../services/showState.js';
 import { serializeImage } from '../utils/imageResponse.js';
 import { getVoteSummary } from '../services/voteStore.js';
+import { getAudienceVoteSummary } from '../services/audienceVoteStore.js';
 
 export class UploadValidationError extends Error {
   status: number;
@@ -111,12 +112,16 @@ publicImagesRouter.get('/leaderboard', (_req, res) => {
   
   const leaderboard = images.map((image) => {
     const voteSummary = getVoteSummary(image.id);
+    const audienceSummary = getAudienceVoteSummary(image.id);
     return {
       image: serializeImage(image),
       average: voteSummary.average,
       voteCount: voteSummary.judgeCount,
       distribution: voteSummary.distribution,
       votes: voteSummary.votes,
+      audienceAverage: audienceSummary.average,
+      audienceVoteCount: audienceSummary.voteCount,
+      audienceDistribution: audienceSummary.distribution,
     };
   });
 
@@ -141,11 +146,15 @@ imagesRouter.get('/leaderboard', (_req, res) => {
   
   const leaderboard = images.map((image) => {
     const voteSummary = getVoteSummary(image.id);
+    const audienceSummary = getAudienceVoteSummary(image.id);
     return {
       image: serializeImage(image),
       average: voteSummary.average,
       voteCount: voteSummary.judgeCount,
       distribution: voteSummary.distribution,
+      audienceAverage: audienceSummary.average,
+      audienceVoteCount: audienceSummary.voteCount,
+      audienceDistribution: audienceSummary.distribution,
     };
   });
 

@@ -520,6 +520,7 @@ export function ControlDashboard(): JSX.Element {
             }>,
             timer: baseTimer,
             currentVotes: null,
+            audienceVotes: null,
             showOverlayVoting: false,
           };
 
@@ -542,6 +543,7 @@ export function ControlDashboard(): JSX.Element {
           queue: normalizedQueue,
           timer: baseTimer,
           currentVotes: baseState.currentVotes,
+          audienceVotes: baseState.audienceVotes,
         };
       });
       broadcastStateUpdate();

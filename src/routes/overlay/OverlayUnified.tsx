@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import type { UploadedImage } from '../../api/images';
-import type { ShowState, ShowStage, TimerState, VoteSummaryItem } from '../../api/control';
+import type { AudienceSummary, ShowState, ShowStage, TimerState, VoteSummaryItem } from '../../api/control';
 import { fetchShowStatePublic } from '../../api/control';
 import { JUDGE_ICON_MAP } from '../../constants/judges';
 
@@ -248,6 +248,51 @@ function ResultsPanel({ average, verdict, verdictTone, votes }: { average: numbe
   );
 }
 
+function AudiencePanel({ summary }: { summary: AudienceSummary | null | undefined }): JSX.Element {
+  if (!summary) {
+    return (
+      <div className="rounded-2xl border border-white/10 bg-night-900/60 px-4 py-3 text-sm text-specter-300">
+        Chat votes will appear here once the round starts.
+      </div>
+    );
+  }
+
+  const total = summary.voteCount;
+
+  return (
+    <div className="space-y-3 rounded-2xl border border-white/10 bg-night-900/70 p-4">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-[0.65rem] uppercase tracking-[0.35em] text-specter-300">Chat Score</p>
+          <p className="text-3xl font-semibold text-gold">{summary.average !== null ? `🎅 ${summary.average.toFixed(2)}` : 'No votes yet'}</p>
+        </div>
+        <div className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-[0.65rem] uppercase tracking-[0.3em] text-specter-300">
+          {total} vote{total === 1 ? '' : 's'}
+        </div>
+      </div>
+      {summary.distribution.length === 5 && (
+        <div className="grid grid-cols-5 gap-2">
+          {summary.distribution.map((count, index) => {
+            const percent = total > 0 ? Math.round((count / total) * 100) : 0;
+            return (
+              <div key={index} className="flex flex-col items-center gap-1 rounded-xl border border-white/10 bg-night-900/70 px-2 py-2">
+                <span className="text-lg font-semibold text-bone-100">{index + 1}</span>
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-[#d64545] via-[#f7d774] to-[#4fa387]"
+                    style={{ width: `${percent}%` }}
+                  />
+                </div>
+                <span className="text-[0.65rem] text-specter-300">{percent}%</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function OverlayUnified(): JSX.Element {
   const [searchParams] = useSearchParams();
   const debug = searchParams.get('debug') === '1';
@@ -463,12 +508,15 @@ export function OverlayUnified(): JSX.Element {
               className={`relative flex flex-col justify-between gap-6 rounded-[2.5rem] border ${meta.railBorder} bg-night-900/90 p-6 backdrop-blur-xl shadow-[0_0_50px_rgba(214,69,69,0.2)]`}
             >
               <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,rgba(247,215,116,0.1),transparent_60%)]" />
-              {stage === 'ready' && <ReadyPanel nextImageName={activeImage?.name ?? nextImageName} />}
-              {stage === 'voting' && <VotingPanel distribution={distribution} totalVotes={totalVotes} average={finalAverage} votes={voteSummary?.votes ?? []} />}
-              {stage === 'locked' && <LockedPanel average={finalAverage} totalVotes={totalVotes} distribution={distribution} />}
-              {stage === 'results' && (
-                <ResultsPanel average={finalAverage} verdict={verdict} verdictTone={verdictTone} votes={resultsVotes} />
-              )}
+              <div className="space-y-4">
+                {stage === 'ready' && <ReadyPanel nextImageName={activeImage?.name ?? nextImageName} />}
+                {stage === 'voting' && <VotingPanel distribution={distribution} totalVotes={totalVotes} average={finalAverage} votes={voteSummary?.votes ?? []} />}
+                {stage === 'locked' && <LockedPanel average={finalAverage} totalVotes={totalVotes} distribution={distribution} />}
+                {stage === 'results' && (
+                  <ResultsPanel average={finalAverage} verdict={verdict} verdictTone={verdictTone} votes={resultsVotes} />
+                )}
+              </div>
+              <AudiencePanel summary={showState?.audienceVotes} />
             </aside>
           )}
         </div>
