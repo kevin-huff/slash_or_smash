@@ -58,132 +58,133 @@ export async function initChatListener(): Promise<void> {
     return;
   }
 
-  const envUsername = process.env.TWITCH_CHAT_USERNAME;
-  const envToken = process.env.TWITCH_CHAT_OAUTH_TOKEN;
-  const envChannel = process.env.TWITCH_CHAT_CHANNEL;
-
-  status.missingEnv = [];
-  if (!envUsername) status.missingEnv.push('TWITCH_CHAT_USERNAME');
-  if (!envToken) status.missingEnv.push('TWITCH_CHAT_OAUTH_TOKEN');
-  if (!envChannel) status.missingEnv.push('TWITCH_CHAT_CHANNEL');
-
-  // Prefer broadcaster OAuth tokens from our Twitch integration
-  const broadcasterCreds = await getBroadcasterChatCredentials();
-  status.hasBroadcasterToken = !!broadcasterCreds;
-
-  const username = broadcasterCreds?.username ?? envUsername ?? null;
-  const token = broadcasterCreds ? `oauth:${broadcasterCreds.accessToken.replace(/^oauth:/, '')}` : envToken ?? null;
-  const channel = envChannel;
-  status.authSource = broadcasterCreds ? 'broadcaster' : envToken && envUsername ? 'env' : 'none';
-
-  if (!username || !token || !channel) {
-    console.warn('[Chat] Twitch chat listener not started: missing credentials');
-    status.enabled = false;
-    status.connected = false;
-    status.connecting = false;
-    status.channel = channel ?? null;
-    status.username = username ?? null;
-    status.lastError = 'Missing Twitch chat credentials';
-    return;
-  }
-
-  status.enabled = true;
-  status.username = username;
-  status.channel = channel.startsWith('#') ? channel : `#${channel}`;
-  status.connecting = true;
-
   isConnecting = true;
 
-  client = new tmi.Client({
-    identity: {
-      username,
-      password: token.startsWith('oauth:') ? token : `oauth:${token}`,
-    },
-    channels: [channel.startsWith('#') ? channel : `#${channel}`],
-    connection: {
-      reconnect: true,
-      secure: true,
-    },
-  });
-
-  client.on('message', (_channel: string, userstate: ChatUserstate, message: string, self: boolean) => {
-    if (self) return;
-    const score = parseScore(message);
-    if (score === null) {
-      return;
-    }
-
-    const stage = getCurrentStage();
-    const currentImage = getCurrentImage();
-    if (stage !== 'voting' || !currentImage) {
-      return;
-    }
-
-    const voterId = userstate['user-id'] || userstate.username || 'anon';
-    try {
-      saveAudienceVote(currentImage.id, voterId, score);
-      status.lastSeenVoteAt = Date.now();
-      if (process.env.NODE_ENV !== 'production') {
-        console.debug('[Chat] Vote recorded', { voterId, score, imageId: currentImage.id });
-      }
-    } catch (error) {
-      console.error('[Chat] Failed to record vote', error);
-    }
-  });
-
-  client.on('connected', (_addr: string, port: number) => {
-    console.log(`[Chat] Connected to Twitch chat on port ${port}`);
-    status.connected = true;
-    status.connecting = false;
-    status.lastConnectedAt = Date.now();
-    status.lastError = null;
-    status.lastNotice = null;
-  });
-
-  client.on('connecting', (addr: string, port: number) => {
-    status.connecting = true;
-    status.connected = false;
-    console.log(`[Chat] Connecting to Twitch chat ${addr}:${port}`);
-  });
-
-  client.on('disconnected', (reason: string) => {
-    console.warn('[Chat] Disconnected from Twitch chat', reason);
-    status.connected = false;
-    status.connecting = false;
-    status.lastDisconnectReason = reason;
-  });
-
-  client.on('reconnect', () => {
-    console.warn('[Chat] Reconnecting to Twitch chat…');
-    status.connecting = true;
-    status.connected = false;
-  });
-
-  client.on('notice', (_channel: string, msgid: string, message: string) => {
-    status.lastNotice = `${msgid ?? ''} ${message ?? ''}`.trim();
-    console.warn('[Chat] Notice', { msgid, message });
-    const lower = `${msgid ?? ''} ${message ?? ''}`.toLowerCase();
-    if (lower.includes('authentication') || lower.includes('login')) {
-      status.lastError = message || 'Login/authentication failed';
-      status.connecting = false;
-      status.connected = false;
-    }
-  });
-
   try {
-    await client.connect();
-  } catch (error) {
-    console.error('[Chat] Failed to connect to Twitch chat', error);
-    // Important: Disconnect to stop internal reconnection timers if the initial connect failed
-    if (client) {
-      // We don't await this or log errors because we're already handling a failure
-      client.disconnect().catch(() => { });
+    const envUsername = process.env.TWITCH_CHAT_USERNAME;
+    const envToken = process.env.TWITCH_CHAT_OAUTH_TOKEN;
+    const envChannel = process.env.TWITCH_CHAT_CHANNEL;
+
+    status.missingEnv = [];
+    if (!envUsername) status.missingEnv.push('TWITCH_CHAT_USERNAME');
+    if (!envToken) status.missingEnv.push('TWITCH_CHAT_OAUTH_TOKEN');
+    if (!envChannel) status.missingEnv.push('TWITCH_CHAT_CHANNEL');
+
+    // Prefer broadcaster OAuth tokens from our Twitch integration
+    const broadcasterCreds = await getBroadcasterChatCredentials();
+    status.hasBroadcasterToken = !!broadcasterCreds;
+
+    const username = broadcasterCreds?.username ?? envUsername ?? null;
+    const token = broadcasterCreds ? `oauth:${broadcasterCreds.accessToken.replace(/^oauth:/, '')}` : envToken ?? null;
+    const channel = envChannel;
+    status.authSource = broadcasterCreds ? 'broadcaster' : envToken && envUsername ? 'env' : 'none';
+
+    if (!username || !token || !channel) {
+      console.warn('[Chat] Twitch chat listener not started: missing credentials');
+      status.enabled = false;
+      status.connected = false;
+      status.connecting = false;
+      status.channel = channel ?? null;
+      status.username = username ?? null;
+      status.lastError = 'Missing Twitch chat credentials';
+      return;
     }
-    client = null;
-    status.connected = false;
-    status.connecting = false;
-    status.lastError = error instanceof Error ? error.message : String(error);
-    status.lastNotice = status.lastNotice ?? status.lastError;
+
+    status.enabled = true;
+    status.username = username;
+    status.channel = channel.startsWith('#') ? channel : `#${channel}`;
+    status.connecting = true;
+
+    client = new tmi.Client({
+      identity: {
+        username,
+        password: token.startsWith('oauth:') ? token : `oauth:${token}`,
+      },
+      channels: [channel.startsWith('#') ? channel : `#${channel}`],
+      connection: {
+        reconnect: true,
+        secure: true,
+      },
+    });
+
+    client.on('message', (_channel: string, userstate: ChatUserstate, message: string, self: boolean) => {
+      if (self) return;
+      const score = parseScore(message);
+      if (score === null) {
+        return;
+      }
+
+      const stage = getCurrentStage();
+      const currentImage = getCurrentImage();
+      if (stage !== 'voting' || !currentImage) {
+        return;
+      }
+
+      const voterId = userstate['user-id'] || userstate.username || 'anon';
+      try {
+        saveAudienceVote(currentImage.id, voterId, score);
+        status.lastSeenVoteAt = Date.now();
+        if (process.env.NODE_ENV !== 'production') {
+          console.debug('[Chat] Vote recorded', { voterId, score, imageId: currentImage.id });
+        }
+      } catch (error) {
+        console.error('[Chat] Failed to record vote', error);
+      }
+    });
+
+    client.on('connected', (_addr: string, port: number) => {
+      console.log(`[Chat] Connected to Twitch chat on port ${port}`);
+      status.connected = true;
+      status.connecting = false;
+      status.lastConnectedAt = Date.now();
+      status.lastError = null;
+      status.lastNotice = null;
+    });
+
+    client.on('connecting', (addr: string, port: number) => {
+      status.connecting = true;
+      status.connected = false;
+      console.log(`[Chat] Connecting to Twitch chat ${addr}:${port}`);
+    });
+
+    client.on('disconnected', (reason: string) => {
+      console.warn('[Chat] Disconnected from Twitch chat', reason);
+      status.connected = false;
+      status.connecting = false;
+      status.lastDisconnectReason = reason;
+    });
+
+    client.on('reconnect', () => {
+      console.warn('[Chat] Reconnecting to Twitch chat…');
+      status.connecting = true;
+      status.connected = false;
+    });
+
+    client.on('notice', (_channel: string, msgid: string, message: string) => {
+      status.lastNotice = `${msgid ?? ''} ${message ?? ''}`.trim();
+      console.warn('[Chat] Notice', { msgid, message });
+      const lower = `${msgid ?? ''} ${message ?? ''}`.toLowerCase();
+      if (lower.includes('authentication') || lower.includes('login')) {
+        status.lastError = message || 'Login/authentication failed';
+        status.connecting = false;
+        status.connected = false;
+      }
+    });
+
+    try {
+      await client.connect();
+    } catch (error) {
+      console.error('[Chat] Failed to connect to Twitch chat', error);
+      // Important: Disconnect to stop internal reconnection timers if the initial connect failed
+      if (client) {
+        client.disconnect().catch(() => { });
+      }
+      client = null;
+      status.connected = false;
+      status.connecting = false;
+      status.lastError = error instanceof Error ? error.message : String(error);
+      status.lastNotice = status.lastNotice ?? status.lastError;
+    }
   } finally {
     isConnecting = false;
   }
