@@ -1,6 +1,7 @@
 import tmi, { type ChatUserstate } from 'tmi.js';
 import { getCurrentImage, getCurrentStage } from './showState.js';
 import { saveAudienceVote } from './audienceVoteStore.js';
+import { getBroadcasterChatCredentials } from './twitchClient.js';
 
 let client: tmi.Client | null = null;
 let isConnecting = false;
@@ -17,6 +18,7 @@ type ChatStatus = {
   lastSeenVoteAt: number | null;
   missingEnv: string[];
   lastNotice: string | null;
+  authSource: 'broadcaster' | 'env' | 'none';
 };
 
 const status: ChatStatus = {
@@ -31,6 +33,7 @@ const status: ChatStatus = {
   lastSeenVoteAt: null,
   missingEnv: [],
   lastNotice: null,
+  authSource: 'none',
 };
 
 function parseScore(message: string): number | null {
@@ -53,23 +56,31 @@ export async function initChatListener(): Promise<void> {
     return;
   }
 
-  const username = process.env.TWITCH_CHAT_USERNAME;
-  const token = process.env.TWITCH_CHAT_OAUTH_TOKEN;
-  const channel = process.env.TWITCH_CHAT_CHANNEL;
+  const envUsername = process.env.TWITCH_CHAT_USERNAME;
+  const envToken = process.env.TWITCH_CHAT_OAUTH_TOKEN;
+  const envChannel = process.env.TWITCH_CHAT_CHANNEL;
 
   status.missingEnv = [];
-  if (!username) status.missingEnv.push('TWITCH_CHAT_USERNAME');
-  if (!token) status.missingEnv.push('TWITCH_CHAT_OAUTH_TOKEN');
-  if (!channel) status.missingEnv.push('TWITCH_CHAT_CHANNEL');
+  if (!envUsername) status.missingEnv.push('TWITCH_CHAT_USERNAME');
+  if (!envToken) status.missingEnv.push('TWITCH_CHAT_OAUTH_TOKEN');
+  if (!envChannel) status.missingEnv.push('TWITCH_CHAT_CHANNEL');
+
+  // Prefer broadcaster OAuth tokens from our Twitch integration
+  const broadcasterCreds = await getBroadcasterChatCredentials();
+
+  const username = broadcasterCreds?.username ?? envUsername ?? null;
+  const token = broadcasterCreds ? `oauth:${broadcasterCreds.accessToken}` : envToken ?? null;
+  const channel = envChannel;
+  status.authSource = broadcasterCreds ? 'broadcaster' : envToken && envUsername ? 'env' : 'none';
 
   if (!username || !token || !channel) {
-    console.warn('[Chat] Twitch chat listener not started: missing TWITCH_CHAT_USERNAME, TWITCH_CHAT_OAUTH_TOKEN, or TWITCH_CHAT_CHANNEL');
+    console.warn('[Chat] Twitch chat listener not started: missing credentials');
     status.enabled = false;
     status.connected = false;
     status.connecting = false;
     status.channel = channel ?? null;
     status.username = username ?? null;
-    status.lastError = 'Missing Twitch chat env vars';
+    status.lastError = 'Missing Twitch chat credentials';
     return;
   }
 

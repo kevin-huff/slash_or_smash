@@ -19,6 +19,12 @@ function clearTwitchState(key: string): void {
   stmt.run(`twitch_${key}`);
 }
 
+function getTwitchStateOptional(key: string): string | null {
+  const stmt = db.prepare<[string]>(`SELECT value FROM run_state WHERE key = ?`);
+  const row = stmt.get(`twitch_${key}`) as { value: string } | undefined;
+  return row?.value ?? null;
+}
+
 export interface TwitchTokens {
   accessToken: string;
   refreshToken: string;
@@ -47,14 +53,17 @@ export interface ResolvePredictionParams {
 
 const TWITCH_API_BASE = 'https://api.twitch.tv/helix';
 const TWITCH_TOKEN_URL = 'https://id.twitch.tv/oauth2/token';
+const BROADCASTER_LOGIN_KEY = 'broadcaster_login';
 
 export class TwitchClient {
   private clientId: string;
   private clientSecret: string;
+  private cachedBroadcasterLogin: string | null;
 
   constructor(clientId: string, clientSecret: string) {
     this.clientId = clientId;
     this.clientSecret = clientSecret;
+    this.cachedBroadcasterLogin = null;
   }
 
   /**
@@ -191,6 +200,52 @@ export class TwitchClient {
       return data.data[0]?.id || null;
     } catch (error) {
       console.error('Error getting broadcaster ID:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Get broadcaster login (username) using stored tokens
+   */
+  async getBroadcasterLogin(): Promise<string | null> {
+    if (this.cachedBroadcasterLogin) {
+      return this.cachedBroadcasterLogin;
+    }
+    const stored = getTwitchStateOptional(BROADCASTER_LOGIN_KEY);
+    if (stored) {
+      this.cachedBroadcasterLogin = stored;
+      return stored;
+    }
+
+    const accessToken = await this.getValidAccessToken();
+    const broadcasterId = getTwitchStateOptional('broadcaster_id');
+    if (!accessToken || !broadcasterId) {
+      return null;
+    }
+
+    try {
+      const response = await fetch(`${TWITCH_API_BASE}/users?id=${broadcasterId}`, {
+        headers: {
+          'Client-ID': this.clientId,
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        console.error('Failed to fetch broadcaster login:', response.status, await response.text());
+        return null;
+      }
+
+      const data = await response.json();
+      const login = data?.data?.[0]?.login as string | undefined;
+      if (login) {
+        this.cachedBroadcasterLogin = login;
+        setTwitchState(BROADCASTER_LOGIN_KEY, login);
+        return login;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error getting broadcaster login:', error);
       return null;
     }
   }
@@ -383,6 +438,8 @@ export class TwitchClient {
     setTwitchState('refresh_token', tokens.refreshToken);
     setTwitchState('expires_at', tokens.expiresAt.toString());
     setTwitchState('broadcaster_id', tokens.broadcasterId);
+    clearTwitchState(BROADCASTER_LOGIN_KEY);
+    this.cachedBroadcasterLogin = null;
   }
 
   /**
@@ -428,4 +485,20 @@ export function getTwitchClient(): TwitchClient | null {
   }
 
   return twitchClient;
+}
+
+export async function getBroadcasterChatCredentials(): Promise<{ username: string; accessToken: string } | null> {
+  const client = getTwitchClient();
+  if (!client) {
+    return null;
+  }
+  const accessToken = await client.getValidAccessToken();
+  if (!accessToken) {
+    return null;
+  }
+  const username = await client.getBroadcasterLogin();
+  if (!username) {
+    return null;
+  }
+  return { username, accessToken };
 }

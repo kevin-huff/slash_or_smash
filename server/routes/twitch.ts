@@ -45,7 +45,7 @@ router.get('/connect', (_req, res) => {
     return res.status(500).json({ error: 'Twitch not configured' });
   }
 
-  const scopes = ['channel:manage:predictions'];
+  const scopes = ['channel:manage:predictions', 'chat:read', 'chat:edit'];
   const authUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(
     redirectUri
   )}&response_type=code&scope=${encodeURIComponent(scopes.join(' '))}`;
