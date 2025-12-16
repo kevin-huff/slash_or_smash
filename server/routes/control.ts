@@ -22,6 +22,7 @@ import { deleteAllImages } from '../services/imageStore.js';
 import { clearQueue } from '../services/queueStore.js';
 import { getSettings, updateSettings, type AppSettings } from '../services/settingsStore.js';
 import { clearAllAudienceVotes, getAudienceVoteSummary, saveAudienceVote } from '../services/audienceVoteStore.js';
+import { getChatListenerStatus, sendVotingOpenMessage } from '../services/chatListener.js';
 import crypto from 'node:crypto';
 
 const controlRouter = Router();
@@ -84,6 +85,7 @@ controlRouter.get('/state', (_req, res) => {
 controlRouter.post('/start', (_req, res, next) => {
   try {
     const state = advanceToNextImage();
+    void sendVotingOpenMessage(state.currentImage?.name);
     res.json(mapStateForResponse(state));
   } catch (error) {
     if (error instanceof ControlActionError) {
@@ -203,6 +205,7 @@ controlRouter.post('/results', (_req, res, next) => {
 controlRouter.post('/reopen', (_req, res, next) => {
   try {
     const state = reopenVoting();
+    void sendVotingOpenMessage(state.currentImage?.name);
     res.json(mapStateForResponse(state));
   } catch (error) {
     if (error instanceof ControlActionError) {
@@ -347,6 +350,10 @@ controlPublicRouter.get('/overlay/state', (_req, res) => {
   const state = serializeShowState();
   const response = mapStateForResponse(state);
   res.json(response);
+});
+
+controlPublicRouter.get('/audience/status', (_req, res) => {
+  res.json(getChatListenerStatus());
 });
 
 controlPublicRouter.post('/audience/vote', (req, res) => {
