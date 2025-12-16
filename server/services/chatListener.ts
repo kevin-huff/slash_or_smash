@@ -156,14 +156,14 @@ export async function initChatListener(): Promise<void> {
     status.connected = false;
   });
 
-  client.on('notice', (_target, type, msgid) => {
-    status.lastNotice = `${type ?? ''}`.trim();
-    if (msgid) {
-      status.lastNotice = `${status.lastNotice ? status.lastNotice + ' ' : ''}${msgid}`;
-    }
-    console.warn('[Chat] Notice', { type, msgid });
-    if (typeof msgid === 'string' && msgid.toLowerCase().includes('login authentication failed')) {
-      status.lastError = 'Login authentication failed';
+  client.on('notice', (_channel: string, msgid: string, message: string) => {
+    status.lastNotice = `${msgid ?? ''} ${message ?? ''}`.trim();
+    console.warn('[Chat] Notice', { msgid, message });
+    const lower = `${msgid ?? ''} ${message ?? ''}`.toLowerCase();
+    if (lower.includes('authentication') || lower.includes('login')) {
+      status.lastError = message || 'Login/authentication failed';
+      status.connecting = false;
+      status.connected = false;
     }
   });
 
@@ -175,6 +175,7 @@ export async function initChatListener(): Promise<void> {
     status.connected = false;
     status.connecting = false;
     status.lastError = error instanceof Error ? error.message : String(error);
+    status.lastNotice = status.lastNotice ?? status.lastError;
   } finally {
     isConnecting = false;
   }
