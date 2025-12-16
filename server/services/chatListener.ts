@@ -1,4 +1,4 @@
-import tmi from 'tmi.js';
+import tmi, { type ChatUserstate } from 'tmi.js';
 import { getCurrentImage, getCurrentStage } from './showState.js';
 import { saveAudienceVote } from './audienceVoteStore.js';
 
@@ -48,7 +48,7 @@ export async function initChatListener(): Promise<void> {
     },
   });
 
-  client.on('message', (_channel, userstate, message, self) => {
+  client.on('message', (_channel: string, userstate: ChatUserstate, message: string, self: boolean) => {
     if (self) return;
     const score = parseScore(message);
     if (score === null) {
@@ -72,11 +72,11 @@ export async function initChatListener(): Promise<void> {
     }
   });
 
-  client.on('connected', (_addr, port) => {
+  client.on('connected', (_addr: string, port: number) => {
     console.log(`[Chat] Connected to Twitch chat on port ${port}`);
   });
 
-  client.on('disconnected', (reason) => {
+  client.on('disconnected', (reason: string) => {
     console.warn('[Chat] Disconnected from Twitch chat', reason);
   });
 
