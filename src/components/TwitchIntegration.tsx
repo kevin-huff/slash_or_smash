@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { connectTwitch, disconnectTwitch, getTwitchStatus, toggleTwitchPredictions, type TwitchStatus } from '../api/twitch';
+import { reconnectAudience } from '../api/control';
 
 export function TwitchIntegration() {
   const [status, setStatus] = useState<TwitchStatus | null>({ connected: false, configured: true });
@@ -50,6 +51,24 @@ export function TwitchIntegration() {
       await loadStatus();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to toggle predictions');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReconnectChat = async () => {
+    if (!confirm('Force reconnect Twitch chat listener? This may interrupt active voting.')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await reconnectAudience();
+      // Wait a moment for connection to re-establish
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await loadStatus();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to reconnect chat');
     } finally {
       setLoading(false);
     }
@@ -135,14 +154,12 @@ export function TwitchIntegration() {
               <button
                 onClick={() => handleToggle(!status.enabled)}
                 disabled={loading}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  status.enabled ? 'bg-status-voting' : 'bg-specter-700'
-                }`}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${status.enabled ? 'bg-status-voting' : 'bg-specter-700'
+                  }`}
               >
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    status.enabled ? 'translate-x-6' : 'translate-x-1'
-                  }`}
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${status.enabled ? 'translate-x-6' : 'translate-x-1'
+                    }`}
                 />
               </button>
             </div>
@@ -156,6 +173,16 @@ export function TwitchIntegration() {
             </button>
           </>
         )}
+
+        <div className="border-t border-white/10 pt-4">
+          <button
+            onClick={handleReconnectChat}
+            disabled={loading}
+            className="text-xs text-specter-400 transition hover:text-specter-200 disabled:opacity-50"
+          >
+            Force Reconnect Chat Listener
+          </button>
+        </div>
       </div>
     </div>
   );

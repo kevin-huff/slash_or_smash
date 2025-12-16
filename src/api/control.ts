@@ -69,7 +69,7 @@ function mergeHeaders(additional?: HeadersInit): HeadersInit {
 }
 
 export async function fetchShowState(signal?: AbortSignal): Promise<ShowState> {
-  const response = await fetch(withBase('/api/control/state'), { 
+  const response = await fetch(withBase('/api/control/state'), {
     signal,
     headers: getAuthHeaders(),
   });
@@ -89,7 +89,7 @@ export async function fetchShowState(signal?: AbortSignal): Promise<ShowState> {
 }
 
 export async function fetchShowStatePublic(signal?: AbortSignal): Promise<ShowState> {
-  const response = await fetch(withBase('/api/control/overlay/state'), { 
+  const response = await fetch(withBase('/api/control/overlay/state'), {
     signal,
     // No auth headers for public overlay endpoint
   });
@@ -362,13 +362,37 @@ export async function clearAll(): Promise<ShowState> {
   return (await response.json()) as ShowState;
 }
 
+
+
+export async function reconnectAudience(): Promise<unknown> {
+  const response = await fetch(withBase('/api/control/audience/reconnect'), {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    let message = `Failed to reconnect audience chat (${response.status})`;
+    try {
+      const payload = await response.json();
+      if (payload && typeof payload.error === 'string') {
+        message = payload.error;
+      }
+    } catch {
+      // ignore parse errors
+    }
+    throw new Error(message);
+  }
+
+  return await response.json();
+}
+
 export interface AppSettings {
   defaultTimerSeconds: number;
   graceWindowSeconds: number;
 }
 
 export async function fetchSettings(signal?: AbortSignal): Promise<AppSettings> {
-  const response = await fetch(withBase('/api/control/settings'), { 
+  const response = await fetch(withBase('/api/control/settings'), {
     signal,
     headers: getAuthHeaders(),
   });

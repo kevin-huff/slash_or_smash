@@ -22,7 +22,7 @@ import { deleteAllImages } from '../services/imageStore.js';
 import { clearQueue } from '../services/queueStore.js';
 import { getSettings, updateSettings, type AppSettings } from '../services/settingsStore.js';
 import { clearAllAudienceVotes, getAudienceVoteSummary, saveAudienceVote } from '../services/audienceVoteStore.js';
-import { getChatListenerStatus, initChatListener, sendVotingOpenMessage } from '../services/chatListener.js';
+import { getChatListenerStatus, initChatListener, reconnectChatListener, sendVotingOpenMessage } from '../services/chatListener.js';
 import crypto from 'node:crypto';
 
 const controlRouter = Router();
@@ -32,28 +32,28 @@ function mapStateForResponse(state: ShowState) {
   const judgeMap = new Map(judges.map((judge) => [judge.id, judge]));
   const currentVotes = state.currentVotes
     ? {
-        average: state.currentVotes.average,
-        distribution: state.currentVotes.distribution,
-        judgeCount: state.currentVotes.judgeCount,
-        votes: state.currentVotes.votes.map((vote) => {
-          const judge = judgeMap.get(vote.judgeId);
-          return {
-            judgeId: vote.judgeId,
-            judgeName: vote.judgeName ?? judge?.name ?? null,
-            judgeIcon: vote.judgeIcon ?? judge?.icon ?? null,
-            judgeStatus: vote.judgeStatus,
-            score: vote.score,
-            updatedAt: vote.updatedAt,
-          };
-        }),
-      }
+      average: state.currentVotes.average,
+      distribution: state.currentVotes.distribution,
+      judgeCount: state.currentVotes.judgeCount,
+      votes: state.currentVotes.votes.map((vote) => {
+        const judge = judgeMap.get(vote.judgeId);
+        return {
+          judgeId: vote.judgeId,
+          judgeName: vote.judgeName ?? judge?.name ?? null,
+          judgeIcon: vote.judgeIcon ?? judge?.icon ?? null,
+          judgeStatus: vote.judgeStatus,
+          score: vote.score,
+          updatedAt: vote.updatedAt,
+        };
+      }),
+    }
     : null;
   const audienceVotes = state.audienceVotes
     ? {
-        average: state.audienceVotes.average,
-        distribution: state.audienceVotes.distribution,
-        voteCount: state.audienceVotes.voteCount,
-      }
+      average: state.audienceVotes.average,
+      distribution: state.audienceVotes.distribution,
+      voteCount: state.audienceVotes.voteCount,
+    }
     : null;
   return {
     stage: state.stage,
@@ -255,7 +255,7 @@ controlRouter.post('/overlay/voting', (req, res, next) => {
 controlRouter.put('/votes/:imageId/:judgeId', (req, res, next) => {
   const { imageId, judgeId } = req.params;
   const body = req.body as { score?: unknown };
-  
+
   if (typeof body.score !== 'number' || body.score < 1 || body.score > 5) {
     res.status(400).json({ error: 'Body must include score: number (1-5)' });
     return;
@@ -297,17 +297,17 @@ controlRouter.post('/clear-all', (_req, res, next) => {
   try {
     // Reset show state first
     resetToIdle();
-    
+
     // Clear queue
     clearQueue();
-    
+
     // Delete all votes
     deleteAllVotes();
     clearAllAudienceVotes();
-    
+
     // Delete all images (database records and files)
     deleteAllImages();
-    
+
     const state = serializeShowState();
     res.json(mapStateForResponse(state));
   } catch (error) {
@@ -322,14 +322,14 @@ controlRouter.get('/settings', (_req, res) => {
 
 controlRouter.put('/settings', (req, res, next) => {
   const body = req.body as Partial<AppSettings>;
-  
+
   if (body.defaultTimerSeconds !== undefined) {
     if (typeof body.defaultTimerSeconds !== 'number' || body.defaultTimerSeconds <= 0) {
       res.status(400).json({ error: 'defaultTimerSeconds must be a positive number' });
       return;
     }
   }
-  
+
   if (body.graceWindowSeconds !== undefined) {
     if (typeof body.graceWindowSeconds !== 'number' || body.graceWindowSeconds < 0) {
       res.status(400).json({ error: 'graceWindowSeconds must be a non-negative number' });
@@ -348,6 +348,15 @@ controlRouter.put('/settings', (req, res, next) => {
 // Public router for overlay (no auth required)
 export const controlPublicRouter = Router();
 
+controlRouter.post('/audience/reconnect', async (_req, res, next) => {
+  try {
+    await reconnectChatListener();
+    res.json(getChatListenerStatus());
+  } catch (error) {
+    next(error);
+  }
+});
+
 controlPublicRouter.get('/overlay/state', (_req, res) => {
   const state = serializeShowState();
   const response = mapStateForResponse(state);
@@ -361,6 +370,8 @@ controlPublicRouter.get('/audience/status', (_req, res) => {
   }
   res.json(getChatListenerStatus());
 });
+
+
 
 controlPublicRouter.post('/audience/vote', (req, res) => {
   const body = req.body as { score?: unknown; voterId?: unknown };

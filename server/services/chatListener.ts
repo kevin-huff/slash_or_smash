@@ -201,3 +201,30 @@ export function sendVotingOpenMessage(imageName?: string): void {
       status.lastError = error instanceof Error ? error.message : String(error);
     });
 }
+
+export async function reconnectChatListener(): Promise<void> {
+  console.log('[Chat] Force reconnect requested');
+
+  if (client) {
+    try {
+      await client.disconnect();
+    } catch (error) {
+      console.warn('[Chat] Error disconnecting existing client during reconnect:', error);
+    }
+    client = null;
+  }
+
+  // Reset status
+  status.connected = false;
+  status.connecting = false;
+  status.lastError = null;
+  status.lastNotice = null;
+  status.lastDisconnectReason = null;
+  status.missingEnv = [];
+  status.authSource = 'none';
+  status.hasBroadcasterToken = false;
+  isConnecting = false;
+
+  // Re-initialize
+  return initChatListener();
+}
