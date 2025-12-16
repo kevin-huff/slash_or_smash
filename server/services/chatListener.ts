@@ -16,6 +16,7 @@ type ChatStatus = {
   lastDisconnectReason: string | null;
   lastSeenVoteAt: number | null;
   missingEnv: string[];
+  lastNotice: string | null;
 };
 
 const status: ChatStatus = {
@@ -29,6 +30,7 @@ const status: ChatStatus = {
   lastDisconnectReason: null,
   lastSeenVoteAt: null,
   missingEnv: [],
+  lastNotice: null,
 };
 
 function parseScore(message: string): number | null {
@@ -121,6 +123,13 @@ export async function initChatListener(): Promise<void> {
     status.connecting = false;
     status.lastConnectedAt = Date.now();
     status.lastError = null;
+    status.lastNotice = null;
+  });
+
+  client.on('connecting', (addr: string, port: number) => {
+    status.connecting = true;
+    status.connected = false;
+    console.log(`[Chat] Connecting to Twitch chat ${addr}:${port}`);
   });
 
   client.on('disconnected', (reason: string) => {
@@ -128,6 +137,23 @@ export async function initChatListener(): Promise<void> {
     status.connected = false;
     status.connecting = false;
     status.lastDisconnectReason = reason;
+  });
+
+  client.on('reconnect', () => {
+    console.warn('[Chat] Reconnecting to Twitch chat…');
+    status.connecting = true;
+    status.connected = false;
+  });
+
+  client.on('notice', (_target, type, msgid) => {
+    status.lastNotice = `${type ?? ''}`.trim();
+    if (msgid) {
+      status.lastNotice = `${status.lastNotice ? status.lastNotice + ' ' : ''}${msgid}`;
+    }
+    console.warn('[Chat] Notice', { type, msgid });
+    if (typeof msgid === 'string' && msgid.toLowerCase().includes('login authentication failed')) {
+      status.lastError = 'Login authentication failed';
+    }
   });
 
   try {
