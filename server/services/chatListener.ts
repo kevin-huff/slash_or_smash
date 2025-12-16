@@ -102,7 +102,7 @@ export async function initChatListener(): Promise<void> {
       },
       channels: [channel.startsWith('#') ? channel : `#${channel}`],
       connection: {
-        reconnect: true,
+        reconnect: false, // Disable internal reconnect to prevent zombie loops
         secure: true,
       },
     });
