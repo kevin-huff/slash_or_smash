@@ -71,7 +71,9 @@ export async function initChatListener(): Promise<void> {
     if (!envChannel) status.missingEnv.push('TWITCH_CHAT_CHANNEL');
 
     // Prefer broadcaster OAuth tokens from our Twitch integration
+    console.debug('[Chat] Requesting broadcaster credentials...');
     const broadcasterCreds = await getBroadcasterChatCredentials();
+    console.debug('[Chat] Broadcaster creds result:', !!broadcasterCreds);
     status.hasBroadcasterToken = !!broadcasterCreds;
 
     const username = broadcasterCreds?.username ?? envUsername ?? null;

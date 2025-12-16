@@ -321,16 +321,16 @@ export class TwitchClient {
       if (statusResponse.ok) {
         const statusData = await statusResponse.json();
         const prediction = statusData.data?.[0];
-        
+
         if (prediction) {
           console.log(`Prediction ${params.predictionId} current status: ${prediction.status}`);
-          
+
           // If prediction is already RESOLVED or CANCELED, we can't resolve it again
           if (prediction.status === 'RESOLVED' || prediction.status === 'CANCELED') {
             console.log(`Prediction already ${prediction.status}, skipping resolution`);
             return true;
           }
-          
+
           // If prediction is still ACTIVE or LOCKED, we can resolve it
         }
       }
@@ -490,15 +490,25 @@ export function getTwitchClient(): TwitchClient | null {
 export async function getBroadcasterChatCredentials(): Promise<{ username: string; accessToken: string } | null> {
   const client = getTwitchClient();
   if (!client) {
+    console.debug('[Twitch] getBroadcasterChatCredentials: No client');
     return null;
   }
   const accessToken = await client.getValidAccessToken();
   if (!accessToken) {
+    console.debug('[Twitch] getBroadcasterChatCredentials: No access token');
     return null;
   }
   const login = await client.getBroadcasterLogin();
   const fallbackChannel = process.env.TWITCH_CHAT_CHANNEL;
   const username = login ?? (fallbackChannel ? fallbackChannel.replace(/^#/, '') : null);
+
+  console.debug('[Twitch] getBroadcasterChatCredentials:', {
+    hasAccessToken: !!accessToken,
+    login,
+    fallbackChannel,
+    resolvedUsername: username
+  });
+
   if (!username) {
     return null;
   }
