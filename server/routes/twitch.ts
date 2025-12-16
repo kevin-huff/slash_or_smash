@@ -1,6 +1,7 @@
 import express from 'express';
 import { getTwitchClient } from '../services/twitchClient.js';
 import { getRunState, setRunState } from '../services/runStateStore.js';
+import { initChatListener } from '../services/chatListener.js';
 
 const router = express.Router();
 
@@ -73,6 +74,9 @@ router.get('/callback', async (req, res) => {
     if (!tokens) {
       return res.status(500).send('Failed to exchange authorization code for tokens');
     }
+
+    // Start (or re-attempt) chat listener now that OAuth tokens are stored
+    void initChatListener();
 
     // Redirect back to control dashboard with success message
     res.redirect('/control?twitch=connected');
