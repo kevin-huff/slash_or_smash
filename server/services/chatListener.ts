@@ -19,6 +19,7 @@ type ChatStatus = {
   missingEnv: string[];
   lastNotice: string | null;
   authSource: 'broadcaster' | 'env' | 'none';
+  hasBroadcasterToken: boolean;
 };
 
 const status: ChatStatus = {
@@ -34,6 +35,7 @@ const status: ChatStatus = {
   missingEnv: [],
   lastNotice: null,
   authSource: 'none',
+  hasBroadcasterToken: false,
 };
 
 function parseScore(message: string): number | null {
@@ -67,9 +69,10 @@ export async function initChatListener(): Promise<void> {
 
   // Prefer broadcaster OAuth tokens from our Twitch integration
   const broadcasterCreds = await getBroadcasterChatCredentials();
+  status.hasBroadcasterToken = !!broadcasterCreds;
 
   const username = broadcasterCreds?.username ?? envUsername ?? null;
-  const token = broadcasterCreds ? `oauth:${broadcasterCreds.accessToken}` : envToken ?? null;
+  const token = broadcasterCreds ? `oauth:${broadcasterCreds.accessToken.replace(/^oauth:/, '')}` : envToken ?? null;
   const channel = envChannel;
   status.authSource = broadcasterCreds ? 'broadcaster' : envToken && envUsername ? 'env' : 'none';
 

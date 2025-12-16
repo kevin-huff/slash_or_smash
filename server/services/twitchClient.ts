@@ -496,7 +496,9 @@ export async function getBroadcasterChatCredentials(): Promise<{ username: strin
   if (!accessToken) {
     return null;
   }
-  const username = await client.getBroadcasterLogin();
+  const login = await client.getBroadcasterLogin();
+  const fallbackChannel = process.env.TWITCH_CHAT_CHANNEL;
+  const username = login ?? (fallbackChannel ? fallbackChannel.replace(/^#/, '') : null);
   if (!username) {
     return null;
   }
