@@ -74,7 +74,7 @@ export function listVotesForImage(imageId: string): VoteRecord[] {
   return listVotesForImageStmt.all(imageId) as VoteRecord[];
 }
 
-export function getVoteSummary(imageId: string): VoteSummary {
+export function getVoteSummary(imageId: string, audienceSummary?: { average: number | null; voteCount: number } | null): VoteSummary {
   const votes = listVotesForImage(imageId);
   const judges = listJudges();
   const judgeMap = new Map(judges.map((judge) => [judge.id, judge]));
@@ -98,7 +98,36 @@ export function getVoteSummary(imageId: string): VoteSummary {
     };
   });
 
-  const judgeCount = votes.length;
+  let judgeCount = votes.length;
+
+  // Integrate audience vote if provided
+  if (audienceSummary && audienceSummary.voteCount > 0 && audienceSummary.average !== null) {
+    const chatScore = Math.round(audienceSummary.average); // Chat score is usually a float, but distribution buckets are integers.
+    // For the *average* calculation we should use the precise float, 
+    // but for *distribution* we might need to round.
+    // Actually, let's keep the precise average for the sum.
+
+    // Add to sum for the grand average
+    sum += audienceSummary.average;
+    judgeCount += 1;
+
+    // Add to distribution (round to nearest integer for bucket)
+    const bucket = Math.round(audienceSummary.average);
+    if (bucket >= 1 && bucket <= 5) {
+      distribution[bucket - 1] += 1;
+    }
+
+    // Add virtual judge item
+    items.push({
+      judgeId: 'chat',
+      judgeName: 'Chat',
+      judgeIcon: 'chat', // We'll need to handle this icon in frontend or use a default
+      judgeStatus: 'active',
+      score: audienceSummary.average, // Keep precision
+      updatedAt: Date.now(),
+    });
+  }
+
   const average = judgeCount > 0 ? Math.round((sum / judgeCount) * 4) / 4 : null;
 
   return {

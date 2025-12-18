@@ -15,6 +15,7 @@ export const JUDGE_ICON_OPTIONS: JudgeIconOption[] = [
   { id: 'planet', label: 'Planet', emoji: '🪐' },
   { id: 'ufo', label: 'UFO', emoji: '🛸' },
   { id: 'witch', label: 'Witch Hat', emoji: '🧙' },
+  { id: 'chat', label: 'Chat', emoji: '🎅' },
 ];
 
 export const JUDGE_ICON_MAP = Object.fromEntries(

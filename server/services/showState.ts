@@ -263,7 +263,7 @@ export function serializeShowState(): ShowState {
   if (stage === 'voting' && timer.status === 'completed') {
     if (currentImage) {
       updateImageStatus(currentImage.id, 'locked');
-      
+
       // Resolve Twitch prediction when timer auto-completes
       resolvePredictionForRound(currentImage.id).catch((error) => {
         console.error('Failed to resolve Twitch prediction on timer completion:', error);
@@ -275,8 +275,11 @@ export function serializeShowState(): ShowState {
 
   const queueRows = getQueue();
   timer = getTimerStateSnapshot(); // refresh after potential mutation
-  const currentVotes = currentImage ? getVoteSummary(currentImage.id) : null;
   const audienceVotes = currentImage ? getAudienceVoteSummary(currentImage.id) : null;
+
+  // Only factor chat votes into the total when voting is finished (locked or results)
+  const shouldIncludeAudience = stage === 'locked' || stage === 'results';
+  const currentVotes = currentImage ? getVoteSummary(currentImage.id, shouldIncludeAudience ? audienceVotes : null) : null;
 
   const queue: QueueEntry[] = queueRows.map((row, index) => ({
     position: index + 1,
@@ -394,7 +397,7 @@ export function reopenVoting(): ShowState {
 
   updateImageStatus(current.id, 'voting');
   setStage('voting');
-  
+
   // Restart the timer with the default duration
   const now = Date.now();
   const durationMs = DEFAULT_TIMER_MS;
@@ -412,7 +415,7 @@ export function reopenVoting(): ShowState {
   createPredictionForRound(current.id, durationSeconds).catch((error) => {
     console.error('Failed to create Twitch prediction:', error);
   });
-  
+
   return serializeShowState();
 }
 
