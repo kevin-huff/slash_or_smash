@@ -40,10 +40,10 @@ export function OverlayLeaderboard(): JSX.Element {
 
   const rows = useMemo<DerivedRow[]>(() => {
     return leaderboard.slice(0, 5).map((entry, index) => {
-      const scoreLabel = entry.average !== null 
-        ? `★ ${entry.average.toFixed(2)}` 
+      const scoreLabel = entry.average !== null
+        ? `★ ${entry.average.toFixed(2)}`
         : 'No votes yet';
-      
+
       return {
         rank: index + 1,
         entry,
@@ -99,11 +99,17 @@ export function OverlayLeaderboard(): JSX.Element {
                 <div className="relative z-10 flex-1 min-h-0 overflow-hidden rounded-[2rem] border border-white/10 bg-night-900/80 shadow-[inset_0_0_40px_rgba(247,215,116,0.12)] backdrop-blur-sm">
                   <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(214,69,69,0.1),transparent_70%)]" />
                   <div className="relative flex h-full items-center justify-center p-4">
-                    <img
-                      src={topRow.entry.image.url}
-                      alt={topRow.entry.image.name}
-                      className="relative z-10 max-h-full max-w-full object-contain"
-                    />
+                    {topRow.entry.image.type === 'link' ? (
+                      <div className="flex h-full w-full items-center justify-center text-8xl text-bone-100">
+                        🔗
+                      </div>
+                    ) : (
+                      <img
+                        src={topRow.entry.image.url}
+                        alt={topRow.entry.image.name}
+                        className="relative z-10 max-h-full max-w-full object-contain"
+                      />
+                    )}
                   </div>
                 </div>
               </>
@@ -121,22 +127,27 @@ export function OverlayLeaderboard(): JSX.Element {
               {rows.map((row) => (
                 <li
                   key={row.entry.image.id}
-                  className={`flex items-center justify-between gap-4 rounded-2xl border px-5 py-4 ${
-                    row.rank === 1
+                  className={`flex items-center justify-between gap-4 rounded-2xl border px-5 py-4 ${row.rank === 1
                       ? 'border-gold/50 bg-gold/10 text-bone-100 shadow-[0_0_20px_rgba(247,215,116,0.25)]'
                       : 'border-white/10 bg-night-900/70 text-specter-300 backdrop-blur-sm'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center gap-4 min-w-0 flex-1">
                     <span className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl border border-white/10 bg-night-900/80 text-xl font-semibold text-bone-100">
                       #{row.rank}
                     </span>
                     <div className="relative h-24 w-32 flex-shrink-0 overflow-hidden rounded-lg border border-white/10 bg-night-900/60">
-                      <img
-                        src={row.entry.image.url}
-                        alt={row.entry.image.name}
-                        className="h-full w-full object-contain"
-                      />
+                      {row.entry.image.type === 'link' ? (
+                        <div className="flex h-full w-full items-center justify-center text-3xl text-bone-100 bg-night-900/60">
+                          🔗
+                        </div>
+                      ) : (
+                        <img
+                          src={row.entry.image.url}
+                          alt={row.entry.image.name}
+                          className="h-full w-full object-contain"
+                        />
+                      )}
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-lg font-semibold text-bone-100">{row.entry.image.name}</p>

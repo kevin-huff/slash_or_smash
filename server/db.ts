@@ -16,8 +16,33 @@ db.exec(`
     mime_type TEXT NOT NULL,
     size INTEGER NOT NULL,
     uploaded_at INTEGER NOT NULL,
-    status TEXT NOT NULL DEFAULT 'queued'
+    status TEXT NOT NULL DEFAULT 'queued',
+    type TEXT NOT NULL DEFAULT 'image',
+    url TEXT,
+    metadata TEXT
   );
+`);
+
+// Migration for existing tables
+try {
+  db.exec("ALTER TABLE images ADD COLUMN type TEXT NOT NULL DEFAULT 'image'");
+} catch (e) {
+  // Column likely exists
+}
+
+try {
+  db.exec("ALTER TABLE images ADD COLUMN url TEXT");
+} catch (e) {
+  // Column likely exists
+}
+
+try {
+  db.exec("ALTER TABLE images ADD COLUMN metadata TEXT");
+} catch (e) {
+  // Column likely exists
+}
+
+db.exec(`
 
   CREATE TABLE IF NOT EXISTS queue (
     image_id TEXT PRIMARY KEY,

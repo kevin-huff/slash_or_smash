@@ -169,7 +169,7 @@ function ReadyPanel({ nextImageName }: { nextImageName: string }): JSX.Element {
 
 function VotingPanel({ totalVotes, distribution, average, votes }: { totalVotes: number; distribution: number[]; average: number | null; votes: VoteSummaryItem[] }): JSX.Element {
   const votedJudges = votes.filter(v => v.score > 0);
-  
+
   return (
     <div className="flex h-full flex-col gap-6">
       <div className="flex items-center justify-between">
@@ -182,7 +182,7 @@ function VotingPanel({ totalVotes, distribution, average, votes }: { totalVotes:
         </div>
       </div>
       <VoteBars distribution={distribution} totalVotes={totalVotes} />
-      
+
       {votedJudges.length > 0 && (
         <div className="mt-auto space-y-2">
           <p className="text-xs uppercase tracking-[0.4em] text-specter-300">Locked In</p>
@@ -309,7 +309,7 @@ export function OverlayUnified(): JSX.Element {
   useEffect(() => {
     voteStartAudioRef.current = new Audio('/audio/vote_start.mp3');
     voteEndAudioRef.current = new Audio('/audio/vote_end.mp3');
-    
+
     return () => {
       voteStartAudioRef.current = null;
       voteEndAudioRef.current = null;
@@ -348,22 +348,22 @@ export function OverlayUnified(): JSX.Element {
   // Detect stage transitions and play audio
   useEffect(() => {
     if (!showState) return;
-    
+
     const currentStage = showState.stage;
     const prevStage = prevStageRef.current;
-    
+
     // Play vote_start when voting stage starts
     if (prevStage && prevStage !== 'voting' && currentStage === 'voting') {
       console.log('[Overlay] Stage transition: entering voting stage, playing vote_start');
       voteStartAudioRef.current?.play().catch(err => console.error('Failed to play vote_start:', err));
     }
-    
+
     // Play vote_end when locking votes (voting -> locked)
     if (prevStage === 'voting' && currentStage === 'locked') {
       console.log('[Overlay] Stage transition: locking votes, playing vote_end');
       voteEndAudioRef.current?.play().catch(err => console.error('Failed to play vote_end:', err));
     }
-    
+
     prevStageRef.current = currentStage;
   }, [showState]);
 
@@ -417,12 +417,12 @@ export function OverlayUnified(): JSX.Element {
     timer.status === 'running'
       ? 'Voting window'
       : timer.status === 'paused'
-      ? 'Timer paused'
-      : timer.status === 'completed'
-      ? stage === 'locked'
-        ? 'Reveal incoming'
-        : 'Timer complete'
-      : 'On deck';
+        ? 'Timer paused'
+        : timer.status === 'completed'
+          ? stage === 'locked'
+            ? 'Reveal incoming'
+            : 'Timer complete'
+          : 'On deck';
 
   const timerTone =
     timer.status === 'running'
@@ -430,20 +430,20 @@ export function OverlayUnified(): JSX.Element {
         ? 'text-status-results'
         : 'text-status-voting'
       : timer.status === 'paused'
-      ? 'text-status-locked'
-      : timer.status === 'completed'
-      ? 'text-status-results'
-      : 'text-status-ready';
+        ? 'text-status-locked'
+        : timer.status === 'completed'
+          ? 'text-status-results'
+          : 'text-status-ready';
 
   const meta = STAGE_META[stage];
   const activeImage: UploadedImage | null = showState?.currentImage ?? null;
   const showVotingPanel = showState?.showOverlayVoting ?? false;
-  
+
   // Debug logging
   useEffect(() => {
     console.log('[Overlay] showState.showOverlayVoting:', showState?.showOverlayVoting, 'showVotingPanel:', showVotingPanel);
   }, [showState?.showOverlayVoting, showVotingPanel]);
-  
+
   const nextImageName = showState?.queue[0]?.image.name ?? 'Awaiting upload';
 
   return (
@@ -463,14 +463,24 @@ export function OverlayUnified(): JSX.Element {
               <div className="absolute inset-10 overflow-hidden rounded-[2rem] border border-white/10 bg-night-900/80 shadow-[inset_0_0_40px_rgba(247,215,116,0.12)] backdrop-blur-sm">
                 <div className="relative h-full w-full">
                   {activeImage ? (
-                    <>
-                      <img
-                        src={activeImage.url}
-                        alt={activeImage.name}
-                        className="h-full w-full object-contain"
-                      />
-                      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(214,69,69,0.12),transparent_80%)]" />
-                    </>
+                    activeImage.type === 'link' ? (
+                      <div className="flex h-full w-full flex-col items-center justify-center gap-6 p-8 text-center text-bone-100">
+                        <div className="text-8xl">🔗</div>
+                        <div className="text-4xl font-semibold text-witchlight-500 underline decoration-witchlight-500/50 underline-offset-8">
+                          {activeImage.url}
+                        </div>
+                        <p className="text-xl uppercase tracking-[0.35em] text-specter-300">External Link</p>
+                      </div>
+                    ) : (
+                      <>
+                        <img
+                          src={activeImage.url}
+                          alt={activeImage.name}
+                          className="h-full w-full object-contain"
+                        />
+                        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(214,69,69,0.12),transparent_80%)]" />
+                      </>
+                    )
                   ) : (
                     <>
                       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(247,215,116,0.12),transparent_70%)]" />
@@ -529,11 +539,10 @@ export function OverlayUnified(): JSX.Element {
               key={candidate}
               type="button"
               onClick={() => setStageOverride(candidate)}
-              className={`rounded-full px-4 py-2 font-semibold transition ${
-                (stageOverride ?? derivedStage) === candidate
+              className={`rounded-full px-4 py-2 font-semibold transition ${(stageOverride ?? derivedStage) === candidate
                   ? 'border border-gold bg-gold/15 text-gold'
                   : 'border border-white/10 text-specter-300 hover:border-gold/50 hover:text-gold'
-              } ${focusVisible}`}
+                } ${focusVisible}`}
             >
               {candidate}
             </button>

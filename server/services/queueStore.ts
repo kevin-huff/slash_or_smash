@@ -16,7 +16,9 @@ const selectQueueStmt = db.prepare(`
     i.mime_type as mimeType,
     i.size as size,
     i.uploaded_at as uploadedAt,
-    i.status as status
+    i.status as status,
+    i.type as type,
+    i.url as url
   FROM queue q
   JOIN images i ON i.id = q.image_id
   ORDER BY q.ord ASC
@@ -38,7 +40,9 @@ const selectFirstStmt = db.prepare(`
     i.mime_type as mimeType,
     i.size as size,
     i.uploaded_at as uploadedAt,
-    i.status as status
+    i.status as status,
+    i.type as type,
+    i.url as url
   FROM queue q
   JOIN images i ON i.id = q.image_id
   ORDER BY q.ord ASC
@@ -56,6 +60,8 @@ export function getQueue(): QueueRow[] {
     size: number;
     uploadedAt: number;
     status: string;
+    type: string;
+    url: string | null;
   }>;
 
   return rows.map((row) => ({
@@ -69,6 +75,8 @@ export function getQueue(): QueueRow[] {
       size: row.size,
       uploadedAt: row.uploadedAt,
       status: row.status,
+      type: (row.type as 'image' | 'link') || 'image',
+      url: row.url,
     },
   }));
 }
@@ -87,17 +95,19 @@ export function removeFromQueue(imageId: string): boolean {
 export function takeNextFromQueue(): QueueRow | null {
   const row = selectFirstStmt.get() as
     | {
-        imageId: string;
-        ord: number;
-        id: string;
-        name: string;
-        originalName: string;
-        filePath: string;
-        mimeType: string;
-        size: number;
-        uploadedAt: number;
-        status: string;
-      }
+      imageId: string;
+      ord: number;
+      id: string;
+      name: string;
+      originalName: string;
+      filePath: string;
+      mimeType: string;
+      size: number;
+      uploadedAt: number;
+      status: string;
+      type: string;
+      url: string | null;
+    }
     | undefined;
 
   if (!row) {
@@ -117,6 +127,8 @@ export function takeNextFromQueue(): QueueRow | null {
       size: row.size,
       uploadedAt: row.uploadedAt,
       status: row.status,
+      type: (row.type as 'image' | 'link') || 'image',
+      url: row.url,
     },
   };
 }

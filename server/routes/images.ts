@@ -4,11 +4,12 @@ import type { Request } from 'express';
 import { Router } from 'express';
 import multer from 'multer';
 import { config } from '../config.js';
-import { createImage, listImages, updateImageName } from '../services/imageStore.js';
+import { createImage, createLink, listImages, updateImageName } from '../services/imageStore.js';
 import { handleImageQueued } from '../services/showState.js';
 import { serializeImage } from '../utils/imageResponse.js';
 import { getVoteSummary } from '../services/voteStore.js';
 import { getAudienceVoteSummary } from '../services/audienceVoteStore.js';
+import { fetchLinkMetadata } from '../utils/metadata.js';
 
 export class UploadValidationError extends Error {
   status: number;
@@ -105,11 +106,51 @@ imagesRouter.post('/', upload.array('files', 20), (req: Request, res) => {
   res.status(201).json({ images: records.map(serializeImage) });
 });
 
+imagesRouter.post('/link', async (req: Request, res, next) => {
+  const body = req.body as { url?: unknown; name?: unknown };
+
+  if (typeof body.url !== 'string' || body.url.trim().length === 0) {
+    res.status(400).json({ error: 'Body must include url (string)' });
+    return;
+  }
+
+  const url = body.url.trim();
+
+  // Fetch metadata if possible
+  let metadata = null;
+  let defaultName = 'External Link';
+
+  try {
+    metadata = await fetchLinkMetadata(url);
+    if (metadata.title) {
+      defaultName = metadata.title;
+    }
+    if (metadata.siteName) {
+      defaultName += ` • ${metadata.siteName}`;
+    }
+  } catch (error) {
+    console.warn('Failed to fetch link metadata:', error);
+  }
+
+  const name = typeof body.name === 'string' && body.name.trim().length > 0
+    ? body.name.trim()
+    : defaultName;
+
+  const id = crypto.randomUUID();
+  try {
+    const link = createLink(id, name, url, metadata);
+    handleImageQueued(link.id);
+    res.status(201).json({ image: serializeImage(link) });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export const publicImagesRouter = Router();
 
 publicImagesRouter.get('/leaderboard', (_req, res) => {
   const images = listImages();
-  
+
   const leaderboard = images.map((image) => {
     const voteSummary = getVoteSummary(image.id);
     const audienceSummary = getAudienceVoteSummary(image.id);
@@ -143,7 +184,7 @@ publicImagesRouter.get('/leaderboard', (_req, res) => {
 
 imagesRouter.get('/leaderboard', (_req, res) => {
   const images = listImages();
-  
+
   const leaderboard = images.map((image) => {
     const voteSummary = getVoteSummary(image.id);
     const audienceSummary = getAudienceVoteSummary(image.id);

@@ -2,7 +2,7 @@ import type { ChangeEvent, DragEvent } from 'react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { UploadedImage } from '../api/images';
-import { uploadImages, updateImageName } from '../api/images';
+import { uploadImages, updateImageName, createLink } from '../api/images';
 import {
   lockCurrentRound,
   pauseTimer,
@@ -192,9 +192,8 @@ function StateChip({ state, subtle }: { state: ControlState; subtle?: boolean })
   const meta = STATE_META[state];
   return (
     <span
-      className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold uppercase tracking-[0.35em] ${meta.text} ${
-        subtle ? meta.badge : `${meta.badge} ring-1 ${meta.ring}`
-      }`}
+      className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold uppercase tracking-[0.35em] ${meta.text} ${subtle ? meta.badge : `${meta.badge} ring-1 ${meta.ring}`
+        }`}
     >
       <span className={`h-2 w-2 rounded-full ${meta.dot}`} />
       {meta.label}
@@ -336,6 +335,11 @@ export function ControlDashboard(): JSX.Element {
   const [editingSettingValue, setEditingSettingValue] = useState<number>(0);
   const [isSavingSetting, setIsSavingSetting] = useState(false);
   const [settingsError, setSettingsError] = useState<string | null>(null);
+  const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
+  const [linkUrl, setLinkUrl] = useState('');
+  const [linkName, setLinkName] = useState('');
+  const [isAddingLink, setIsAddingLink] = useState(false);
+  const [addLinkError, setAddLinkError] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window === 'undefined' || typeof window.BroadcastChannel === 'undefined') {
@@ -560,6 +564,64 @@ export function ControlDashboard(): JSX.Element {
     }
   };
 
+  const handleCreateLink = async () => {
+    if (!linkUrl.trim()) {
+      setAddLinkError('URL is required.');
+      return;
+    }
+
+    setIsAddingLink(true);
+    setAddLinkError(null);
+
+    try {
+      const newImage = await createLink(linkUrl.trim(), linkName.trim() || undefined);
+
+      // Update state similar to upload
+      setShowState((prev) => {
+        const baseTimer = prev?.timer ?? timer;
+        const baseState =
+          prev ?? {
+            stage: 'idle' as ShowStage,
+            currentImage: null,
+            queue: [] as Array<{
+              position: number;
+              ord: number;
+              image: UploadedImage;
+            }>,
+            timer: baseTimer,
+            currentVotes: null,
+            audienceVotes: null,
+            showOverlayVoting: false,
+          };
+
+        const currentMaxOrd = baseState.queue.reduce((max, entry) => Math.max(max, entry.ord), 0);
+        const nextOrd = currentMaxOrd + 10;
+        const newQueue = [
+          ...baseState.queue,
+          { position: baseState.queue.length + 1, ord: nextOrd, image: newImage }
+        ];
+        // Normalize positions
+        const normalizedQueue = newQueue.map((entry, idx) => ({ ...entry, position: idx + 1 }));
+
+        return {
+          ...baseState,
+          queue: normalizedQueue,
+        };
+      });
+
+      broadcastStateUpdate();
+      await refreshShowState();
+
+      setIsLinkModalOpen(false);
+      setLinkUrl('');
+      setLinkName('');
+    } catch (error) {
+      setAddLinkError(error instanceof Error ? error.message : 'Failed to create link.');
+    } finally {
+      setIsAddingLink(false);
+    }
+  };
+
   const handleUploadButtonClick = () => {
     setUploadError(null);
     setUploadSuccess(null);
@@ -643,7 +705,7 @@ export function ControlDashboard(): JSX.Element {
     setQueueActionError(null);
     try {
       const updatedImage = await updateImageName(imageId, trimmedName);
-      
+
       // Update the queue optimistically
       setOptimisticQueue((prev) => {
         const queue = prev ?? serverQueue;
@@ -685,22 +747,22 @@ export function ControlDashboard(): JSX.Element {
     if (isReordering || !draggingId || draggingId === overId || !isQueueDragEvent(event)) {
       return;
     }
-    
+
     // Throttle rapid drag enters
     if (lastDragOverIdRef.current === overId) {
       return;
     }
-    
+
     event.preventDefault();
     event.stopPropagation();
-    
+
     lastDragOverIdRef.current = overId;
-    
+
     // Debounce the reorder to reduce jank
     if (dragEnterTimeoutRef.current) {
       clearTimeout(dragEnterTimeoutRef.current);
     }
-    
+
     dragEnterTimeoutRef.current = setTimeout(() => {
       setOptimisticQueue((prev) => reorderQueueLocally(prev ?? serverQueue, draggingId, overId));
       dragEnterTimeoutRef.current = null;
@@ -732,13 +794,13 @@ export function ControlDashboard(): JSX.Element {
   const handleItemDragEnd = (event: DragEvent<HTMLLIElement>) => {
     event.preventDefault();
     event.stopPropagation();
-    
+
     // Clean up timeout if still pending
     if (dragEnterTimeoutRef.current) {
       clearTimeout(dragEnterTimeoutRef.current);
       dragEnterTimeoutRef.current = null;
     }
-    
+
     if (!dropHandledRef.current) {
       setOptimisticQueue(null);
     }
@@ -993,16 +1055,16 @@ export function ControlDashboard(): JSX.Element {
   const startButtonLabel = isStarting
     ? 'Starting…'
     : controlStage === 'voting' && activeImage
-    ? 'Advance to Next Image'
-    : 'Show Image';
+      ? 'Advance to Next Image'
+      : 'Show Image';
   const timerStatusLabel =
     timer.status === 'running'
       ? 'Running'
       : timer.status === 'paused'
-      ? 'Paused'
-      : timer.status === 'completed'
-      ? 'Completed'
-      : 'Idle';
+        ? 'Paused'
+        : timer.status === 'completed'
+          ? 'Completed'
+          : 'Idle';
   const isTimerRunning = timer.status === 'running';
   const isTimerPaused = timer.status === 'paused';
   const canPauseTimer = controlStage === 'voting' && isTimerRunning && !isStageMutating;
@@ -1058,11 +1120,10 @@ export function ControlDashboard(): JSX.Element {
                 <button
                   key={scene.id}
                   type="button"
-                  className={`rounded-full px-5 py-2 text-sm font-semibold uppercase tracking-[0.35em] transition ${
-                    isActive
-                      ? 'bg-gradient-to-r from-[#d64545] to-[#f7d774] text-[#0b1712] shadow-[0_12px_30px_rgba(0,0,0,0.35)]'
-                      : 'border border-transparent text-specter-300 hover:border-gold/40 hover:text-gold'
-                  } ${focusVisible}`}
+                  className={`rounded-full px-5 py-2 text-sm font-semibold uppercase tracking-[0.35em] transition ${isActive
+                    ? 'bg-gradient-to-r from-[#d64545] to-[#f7d774] text-[#0b1712] shadow-[0_12px_30px_rgba(0,0,0,0.35)]'
+                    : 'border border-transparent text-specter-300 hover:border-gold/40 hover:text-gold'
+                    } ${focusVisible}`}
                 >
                   {scene.label}
                 </button>
@@ -1084,8 +1145,8 @@ export function ControlDashboard(): JSX.Element {
                     {activeImage
                       ? `${activeImage.originalName} • ${formatBytes(activeImage.size)} • ${activeImage.mimeType.replace('image/', '').toUpperCase()}`
                       : serverQueue.length > 0
-                      ? 'Start the next round to send it live.'
-                      : 'Upload images to build your queue.'}
+                        ? 'Start the next round to send it live.'
+                        : 'Upload images to build your queue.'}
                   </p>
                 </div>
                 <StateChip state={controlStage === 'idle' ? 'ready' : controlStage} subtle />
@@ -1094,7 +1155,22 @@ export function ControlDashboard(): JSX.Element {
               <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
                 <div className="relative h-72 overflow-hidden rounded-3xl border border-white/5 bg-night-900/70">
                   {activeImage ? (
-                    <img src={activeImage.url} alt={activeImage.name} className="h-full w-full object-cover" />
+                    activeImage.type === 'link' ? (
+                      <div className="flex h-full w-full flex-col items-center justify-center gap-4 bg-night-900 p-8 text-center">
+                        <div className="text-6xl">🔗</div>
+                        <a
+                          href={activeImage.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-2xl font-semibold text-witchlight-500 underline decoration-witchlight-500/50 underline-offset-8 hover:decoration-witchlight-500"
+                        >
+                          {activeImage.url}
+                        </a>
+                        <p className="text-sm uppercase tracking-[0.35em] text-specter-300">External Link</p>
+                      </div>
+                    ) : (
+                      <img src={activeImage.url} alt={activeImage.name} className="h-full w-full object-cover" />
+                    )
                   ) : (
                     <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-5 text-center text-sm text-specter-300">
                       <p>Nothing on-air yet.</p>
@@ -1144,9 +1220,8 @@ export function ControlDashboard(): JSX.Element {
             </section>
 
             <section
-              className={`relative rounded-3xl border border-white/5 bg-grave-800/60 p-6 transition ${
-                isDragActive ? 'border-dashed border-witchlight-500/70 bg-night-900/70' : ''
-              }`}
+              className={`relative rounded-3xl border border-white/5 bg-grave-800/60 p-6 transition ${isDragActive ? 'border-dashed border-witchlight-500/70 bg-night-900/70' : ''
+                }`}
               onDragEnter={handleDragEnter}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
@@ -1156,16 +1231,23 @@ export function ControlDashboard(): JSX.Element {
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <h2 className="text-2xl font-semibold text-bone-100">Queue + Media</h2>
                 <div className="flex items-center gap-3">
-                <span className="text-xs uppercase tracking-[0.35em] text-specter-300/80">
-                  {`Server queue: ${serverQueue.length} · Optimistic: ${
-                    optimisticQueue ? optimisticQueue.length : 0
-                  }`}
-                </span>
+                  <span className="text-xs uppercase tracking-[0.35em] text-specter-300/80">
+                    {`Server queue: ${serverQueue.length} · Optimistic: ${optimisticQueue ? optimisticQueue.length : 0
+                      }`}
+                  </span>
                   {isUploading && (
                     <span className="rounded-full bg-status-ready/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-status-ready">
                       Uploading...
                     </span>
                   )}
+                  <button
+                    type="button"
+                    className={`${secondaryButton} ${isUploading ? 'cursor-not-allowed opacity-70' : ''}`}
+                    onClick={() => setIsLinkModalOpen(true)}
+                    disabled={isUploading}
+                  >
+                    Add Link
+                  </button>
                   <button
                     type="button"
                     className={`${secondaryButton} ${isUploading ? 'cursor-not-allowed opacity-70' : ''}`}
@@ -1234,9 +1316,8 @@ export function ControlDashboard(): JSX.Element {
                     return (
                       <li
                         key={entry.image.id}
-                        className={`group rounded-3xl border border-white/5 bg-night-900/70 p-4 transition hover:border-witchlight-500/40 hover:bg-night-900/80 ${
-                          isDraggingItem ? 'opacity-70 border-dashed border-witchlight-500' : ''
-                        }`}
+                        className={`group rounded-3xl border border-white/5 bg-night-900/70 p-4 transition hover:border-witchlight-500/40 hover:bg-night-900/80 ${isDraggingItem ? 'opacity-70 border-dashed border-witchlight-500' : ''
+                          }`}
                         draggable={!isReordering && !isEditingThisItem}
                         aria-grabbed={isDraggingItem}
                         onDragStart={(event) => handleItemDragStart(event, entry.image.id)}
@@ -1249,67 +1330,74 @@ export function ControlDashboard(): JSX.Element {
                         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                           <div className="flex gap-4 flex-1">
                             {/* Thumbnail */}
+                            {/* Thumbnail */}
                             <div className="flex-shrink-0">
-                              <img
-                                src={entry.image.url}
-                                alt={entry.image.name}
-                                className="h-20 w-20 rounded-2xl border border-white/10 bg-night-900 object-cover"
-                              />
+                              {entry.image.type === 'link' ? (
+                                <div className="flex h-20 w-20 items-center justify-center rounded-2xl border border-white/10 bg-night-900 text-3xl">
+                                  🔗
+                                </div>
+                              ) : (
+                                <img
+                                  src={entry.image.url}
+                                  alt={entry.image.name}
+                                  className="h-20 w-20 rounded-2xl border border-white/10 bg-night-900 object-cover"
+                                />
+                              )}
                             </div>
                             {/* Content */}
                             <div className="flex-1 min-w-0">
                               <p className="text-xs uppercase tracking-[0.35em] text-specter-300">#{entry.position}</p>
-                            {isEditingThisItem ? (
-                              <div className="mt-2 flex items-center gap-2">
-                                <input
-                                  type="text"
-                                  value={editingImageName}
-                                  onChange={(e) => setEditingImageName(e.target.value)}
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
-                                      void handleSaveImageName(entry.image.id);
-                                    } else if (e.key === 'Escape') {
-                                      handleCancelEditImageName();
-                                    }
-                                  }}
-                                  disabled={isSavingName}
-                                  className="flex-1 rounded-full border border-witchlight-500/40 bg-night-900 px-4 py-2 text-lg font-semibold text-bone-100 outline-none transition focus:border-witchlight-500 disabled:opacity-60"
-                                  autoFocus
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => void handleSaveImageName(entry.image.id)}
-                                  disabled={isSavingName}
-                                  className="rounded-full border border-status-ready/40 bg-status-ready/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.35em] text-status-ready transition hover:bg-status-ready/20 disabled:cursor-not-allowed disabled:opacity-60"
-                                >
-                                  {isSavingName ? 'Saving...' : 'Save'}
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={handleCancelEditImageName}
-                                  disabled={isSavingName}
-                                  className="rounded-full border border-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.35em] text-specter-300 transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-60"
-                                >
-                                  Cancel
-                                </button>
-                              </div>
-                            ) : (
-                              <div className="mt-1 flex items-center gap-2">
-                                <h3 className="text-xl font-semibold text-bone-100">{entry.image.name}</h3>
-                                <button
-                                  type="button"
-                                  onClick={() => handleStartEditImageName(entry.image.id, entry.image.name)}
-                                  disabled={isReordering}
-                                  className="rounded px-2 py-1 text-xs text-witchlight-500 opacity-0 transition hover:bg-witchlight-500/10 group-hover:opacity-100 focus:opacity-100 disabled:cursor-not-allowed disabled:opacity-0"
-                                  title="Edit name"
-                                >
-                                  ✎ Edit
-                                </button>
-                              </div>
-                            )}
-                            <p className="text-sm text-specter-300">
-                              {formatBytes(entry.image.size)} • {entry.image.mimeType.replace('image/', '').toUpperCase()}
-                            </p>
+                              {isEditingThisItem ? (
+                                <div className="mt-2 flex items-center gap-2">
+                                  <input
+                                    type="text"
+                                    value={editingImageName}
+                                    onChange={(e) => setEditingImageName(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        void handleSaveImageName(entry.image.id);
+                                      } else if (e.key === 'Escape') {
+                                        handleCancelEditImageName();
+                                      }
+                                    }}
+                                    disabled={isSavingName}
+                                    className="flex-1 rounded-full border border-witchlight-500/40 bg-night-900 px-4 py-2 text-lg font-semibold text-bone-100 outline-none transition focus:border-witchlight-500 disabled:opacity-60"
+                                    autoFocus
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => void handleSaveImageName(entry.image.id)}
+                                    disabled={isSavingName}
+                                    className="rounded-full border border-status-ready/40 bg-status-ready/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.35em] text-status-ready transition hover:bg-status-ready/20 disabled:cursor-not-allowed disabled:opacity-60"
+                                  >
+                                    {isSavingName ? 'Saving...' : 'Save'}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={handleCancelEditImageName}
+                                    disabled={isSavingName}
+                                    className="rounded-full border border-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.35em] text-specter-300 transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-60"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="mt-1 flex items-center gap-2">
+                                  <h3 className="text-xl font-semibold text-bone-100">{entry.image.name}</h3>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleStartEditImageName(entry.image.id, entry.image.name)}
+                                    disabled={isReordering}
+                                    className="rounded px-2 py-1 text-xs text-witchlight-500 opacity-0 transition hover:bg-witchlight-500/10 group-hover:opacity-100 focus:opacity-100 disabled:cursor-not-allowed disabled:opacity-0"
+                                    title="Edit name"
+                                  >
+                                    ✎ Edit
+                                  </button>
+                                </div>
+                              )}
+                              <p className="text-sm text-specter-300">
+                                {formatBytes(entry.image.size)} • {entry.image.mimeType.replace('image/', '').toUpperCase()}
+                              </p>
                             </div>
                           </div>
                           <div className="flex flex-col items-start gap-2 text-sm text-specter-300 md:items-end">
@@ -1317,6 +1405,16 @@ export function ControlDashboard(): JSX.Element {
                               Uploaded {formatUploadTimestamp(entry.image.uploadedAt)}
                             </span>
                             <div className="flex items-center gap-2">
+                              {entry.image.type === 'link' && (
+                                <a
+                                  href={entry.image.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="rounded-full border border-witchlight-500/40 px-3 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-witchlight-500 transition hover:bg-witchlight-500/10"
+                                >
+                                  Open
+                                </a>
+                              )}
                               <span className="rounded-full border border-white/10 bg-night-900/60 px-3 py-1 text-xs uppercase tracking-[0.35em] text-specter-300">
                                 {entry.image.id.slice(0, 8).toUpperCase()}
                               </span>
@@ -1558,8 +1656,8 @@ export function ControlDashboard(): JSX.Element {
                       judge.status === 'active'
                         ? 'bg-status-voting/10 text-status-voting'
                         : judge.status === 'pending'
-                        ? 'bg-status-ready/10 text-status-ready'
-                        : 'bg-status-results/10 text-status-results';
+                          ? 'bg-status-ready/10 text-status-ready'
+                          : 'bg-status-results/10 text-status-results';
 
                     return (
                       <li key={judge.id} className="rounded-2xl border border-white/5 bg-night-900/60 px-3 py-2">
@@ -1914,6 +2012,69 @@ export function ControlDashboard(): JSX.Element {
           </div>
         </div>
       </div>
+
+      {isLinkModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-night-900/90 p-6 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-3xl border border-white/10 bg-grave-800 p-8 shadow-2xl">
+            <h2 className="text-2xl font-semibold text-bone-100">Add Link to Queue</h2>
+            <p className="mt-2 text-sm text-specter-300">
+              Paste a URL to queue securely. Links will display as clickable items for producers and judges.
+            </p>
+
+            <div className="mt-6 flex flex-col gap-4">
+              <div>
+                <label htmlFor="link-url" className="text-xs font-semibold uppercase tracking-wider text-specter-300">Target URL</label>
+                <input
+                  id="link-url"
+                  type="url"
+                  placeholder="https://example.com/art/123"
+                  className="mt-2 w-full rounded-xl border border-white/10 bg-night-900 px-4 py-3 text-bone-100 outline-none focus:border-witchlight-500"
+                  value={linkUrl}
+                  onChange={(e) => setLinkUrl(e.target.value)}
+                  autoFocus
+                />
+              </div>
+
+              <div>
+                <label htmlFor="link-name" className="text-xs font-semibold uppercase tracking-wider text-specter-300">Label (Optional)</label>
+                <input
+                  id="link-name"
+                  type="text"
+                  placeholder="e.g. ArtStation Submission #42"
+                  className="mt-2 w-full rounded-xl border border-white/10 bg-night-900 px-4 py-3 text-bone-100 outline-none focus:border-witchlight-500"
+                  value={linkName}
+                  onChange={(e) => setLinkName(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {addLinkError && (
+              <p className="mt-4 rounded-xl border border-status-results/40 bg-status-results/10 px-4 py-3 text-sm text-status-results">
+                {addLinkError}
+              </p>
+            )}
+
+            <div className="mt-8 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setIsLinkModalOpen(false)}
+                className="rounded-xl border border-white/10 px-5 py-3 text-sm font-semibold uppercase tracking-wider text-specter-300 transition hover:bg-white/5"
+                disabled={isAddingLink}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleCreateLink()}
+                className="rounded-xl bg-witchlight-500 px-6 py-3 text-sm font-semibold uppercase tracking-wider text-night-900 transition hover:bg-witchlight-400 disabled:opacity-50"
+                disabled={isAddingLink}
+              >
+                {isAddingLink ? 'Adding...' : 'Add Link'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <footer className="sticky bottom-0 border-t border-white/5 bg-night-900/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-6 py-4 lg:px-10">

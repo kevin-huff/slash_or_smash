@@ -131,11 +131,10 @@ function VoteButton({
       type="button"
       disabled={disabled}
       onClick={() => onSelect(value)}
-      className={`flex flex-col items-center gap-3 rounded-3xl border px-4 py-5 transition ${
-        selected
-          ? 'border-status-voting bg-status-voting/10 text-status-voting shadow-[0_12px_30px_rgba(19,226,161,0.25)]'
-          : 'border-white/10 bg-night-900/60 text-bone-100 hover:border-witchlight-500/40 hover:bg-night-900/80 hover:text-witchlight-500'
-      } ${disabled ? 'opacity-60 grayscale' : ''} ${focusVisible}`}
+      className={`flex flex-col items-center gap-3 rounded-3xl border px-4 py-5 transition ${selected
+        ? 'border-status-voting bg-status-voting/10 text-status-voting shadow-[0_12px_30px_rgba(19,226,161,0.25)]'
+        : 'border-white/10 bg-night-900/60 text-bone-100 hover:border-witchlight-500/40 hover:bg-night-900/80 hover:text-witchlight-500'
+        } ${disabled ? 'opacity-60 grayscale' : ''} ${focusVisible}`}
     >
       <span className="text-4xl font-semibold">{value}</span>
       <span className="text-xs uppercase tracking-[0.3em] text-specter-300">{VOTE_LABELS[value]}</span>
@@ -538,9 +537,8 @@ export function JudgeConsole(): JSX.Element {
                       key={icon.id}
                       type="button"
                       onClick={() => setIconChoice(icon.id)}
-                      className={`${
-                        isActive ? 'border-gold bg-gold/10 text-gold' : 'border-white/10 text-bone-100 hover:border-gold/40'
-                      } ${focusVisible} flex flex-col items-center gap-2 rounded-2xl border px-4 py-3 text-sm font-semibold`}
+                      className={`${isActive ? 'border-gold bg-gold/10 text-gold' : 'border-white/10 text-bone-100 hover:border-gold/40'
+                        } ${focusVisible} flex flex-col items-center gap-2 rounded-2xl border px-4 py-3 text-sm font-semibold`}
                     >
                       <span className="text-2xl" aria-hidden>
                         {icon.emoji}
@@ -587,7 +585,7 @@ export function JudgeConsole(): JSX.Element {
               </div>
               <StateChip stage={stage} />
             </div>
-            
+
             {voteSummary && (
               <div className="rounded-2xl border border-white/5 bg-night-900/40 px-4 py-3 text-center">
                 <p className="text-xs uppercase tracking-[0.35em] text-specter-300">Round Average</p>
@@ -623,10 +621,60 @@ export function JudgeConsole(): JSX.Element {
 
           <div className="mt-6 overflow-hidden rounded-3xl border border-white/5 bg-night-900/70">
             {activeImage ? (
-              <div className="relative aspect-[4/3] w-full">
-                <img src={activeImage.url} alt={activeImage.name} className="h-full w-full object-cover" />
-                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(247,215,116,0.2),rgba(12,26,18,0)_85%)]" />
-              </div>
+              activeImage.type === 'link' ? (
+                <div className="flex h-full w-full flex-col bg-night-900 border border-white/10 text-bone-100 overflow-hidden">
+                  {/* Rich Link Card */}
+                  {activeImage.metadata?.image && (
+                    <div className="relative h-48 w-full shrink-0 overflow-hidden bg-black/50">
+                      <img
+                        src={activeImage.metadata.image}
+                        alt="Link preview"
+                        className="h-full w-full object-cover opacity-80"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-night-900 to-transparent" />
+                    </div>
+                  )}
+
+                  <div className="flex flex-1 flex-col items-center justify-center p-6 text-center">
+                    {!activeImage.metadata?.image && (
+                      <div className="mb-4 text-5xl">🔗</div>
+                    )}
+
+                    {activeImage.metadata?.siteName && (
+                      <p className="mb-2 text-xs uppercase tracking-[0.35em] text-specter-300">
+                        {activeImage.metadata.siteName}
+                      </p>
+                    )}
+
+                    <h3 className="mb-3 text-xl font-semibold text-bone-100 line-clamp-2">
+                      {activeImage.metadata?.title || activeImage.name}
+                    </h3>
+
+                    {activeImage.metadata?.description && (
+                      <p className="mb-6 max-w-sm text-sm text-specter-300 line-clamp-3">
+                        {activeImage.metadata.description}
+                      </p>
+                    )}
+
+                    <a
+                      href={activeImage.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-2 rounded-full border border-witchlight-500/40 bg-witchlight-500/10 px-5 py-2 text-sm font-semibold text-witchlight-500 transition hover:bg-witchlight-500/20"
+                    >
+                      <span>Open Link</span>
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                    </a>
+                  </div>
+                </div>
+              ) : (
+                <div className="relative aspect-[4/3] w-full">
+                  <img src={activeImage.url} alt={activeImage.name} className="h-full w-full object-cover" />
+                  <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(247,215,116,0.2),rgba(12,26,18,0)_85%)]" />
+                </div>
+              )
             ) : (
               <div className="flex aspect-[4/3] w-full flex-col items-center justify-center gap-3 px-6 text-center text-sm text-specter-300">
                 <span>{placeholderMessage}</span>

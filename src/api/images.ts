@@ -1,5 +1,12 @@
 import { getAuthHeaders } from './auth';
 
+export interface LinkMetadata {
+  title?: string;
+  description?: string;
+  image?: string;
+  siteName?: string;
+}
+
 export interface UploadedImage {
   id: string;
   name: string;
@@ -10,6 +17,8 @@ export interface UploadedImage {
   size: number;
   uploadedAt: number;
   status: string;
+  type?: 'image' | 'link';
+  metadata?: LinkMetadata | null;
 }
 
 export interface VoteSummaryItem {
@@ -45,7 +54,7 @@ function sortImages(images: UploadedImage[]): UploadedImage[] {
 }
 
 export async function listImages(signal?: AbortSignal): Promise<UploadedImage[]> {
-  const response = await fetch('/api/images', { 
+  const response = await fetch('/api/images', {
     signal,
     headers: getAuthHeaders(),
   });
@@ -56,6 +65,33 @@ export async function listImages(signal?: AbortSignal): Promise<UploadedImage[]>
 
   const payload = (await response.json()) as ImagesResponse;
   return sortImages(payload.images);
+}
+
+export async function createLink(url: string, name?: string): Promise<UploadedImage> {
+  const response = await fetch('/api/images/link', {
+    method: 'POST',
+    headers: {
+      ...getAuthHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ url, name }),
+  });
+
+  if (!response.ok) {
+    let message = `Failed to create link (${response.status})`;
+    try {
+      const payload = await response.json();
+      if (payload.error && typeof payload.error === 'string') {
+        message = payload.error;
+      }
+    } catch {
+      // Ignore parse errors
+    }
+    throw new Error(message);
+  }
+
+  const payload = await response.json();
+  return payload.image as UploadedImage;
 }
 
 export async function updateImageName(imageId: string, name: string): Promise<UploadedImage> {
